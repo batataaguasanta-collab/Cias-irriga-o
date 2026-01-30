@@ -54,7 +54,9 @@ import Home from './pages/Home';
 import NovaOrdem from './pages/NovaOrdem';
 import OperadorDashboard from './pages/OperadorDashboard';
 import Login from './pages/Login';
+import Cadastro from './pages/Cadastro';
 import __Layout from './Layout.jsx';
+
 
 
 export const PAGES = {
@@ -65,6 +67,7 @@ export const PAGES = {
     "NovaOrdem": NovaOrdem,
     "OperadorDashboard": OperadorDashboard,
     "Login": Login,
+    "Cadastro": Cadastro,
 }
 
 export const pagesConfig = {
