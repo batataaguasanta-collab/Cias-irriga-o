@@ -2,10 +2,6 @@
 
 Sistema full-stack para **controle operacional, monitoramento em tempo real e cálculo de eficiência** de irrigação por pivô central.
 
-Este README é focado em **desenvolvedores**, descrevendo arquitetura, regras de negócio, modelo lógico e orientações para evolução do sistema.
-
----
-
 ## 📌 Visão Geral Técnica
 
 O sistema gerencia **ordens de irrigação**, acompanha a **posição angular do pivô**, controla **interrupções e retomadas**, e calcula **indicadores de eficiência operacional** com base em tempo efetivo irrigando.
