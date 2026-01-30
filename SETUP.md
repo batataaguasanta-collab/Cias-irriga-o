@@ -60,7 +60,6 @@ VITE_SUPABASE_ANON_KEY=sb_publishable_4Ty_9KRtZov4_rwv2s0xkw_YzDrKIR4
 Abra o terminal na pasta raiz do projeto e execute:
 
 ```bash
-cd src
 npm install
 ```
 
