@@ -1,4 +1,4 @@
-import { Toaster } from "@/Componentes/ui/toaster.jsx"
+import { Toaster } from "@/components/ui/toaster.jsx"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client.js'
 import { pagesConfig } from './pages.config'

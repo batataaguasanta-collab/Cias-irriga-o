@@ -177,7 +177,7 @@ Aplicativo/
 │   │   └── AuthContext.jsx
 │   ├── api/            # APIs e integrações
 │   ├── App.jsx         # Componente raiz
-│   └── main.jsx        # Entry point
+│   └── main-entry.jsx  # Entry point
 ├── .env                # Variáveis de ambiente (NÃO COMMITAR!)
 ├── .env.example        # Template de variáveis
 ├── supabase-schema.sql # Schema do banco de dados
