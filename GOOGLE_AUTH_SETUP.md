@@ -31,8 +31,8 @@
    ```
 
 9. **Salve as credenciais:**
-   - Client ID (ex: 123456789-abc...apps.googleusercontent.com)
-   - Client Secret (ex: GOCSPX-...)
+   - Client ID 61219170218-2enjjo0dr0fsambe4q4lggd90l8k6pnd.apps.googleusercontent.com
+   - Client Secret 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
 
 ## 🔧 Passo 2: Configuração no Supabase
 

@@ -81,7 +81,7 @@ export default function Cadastro() {
                     </div>
                     <div>
                         <CardTitle className="text-3xl font-bold text-emerald-900">Criar Conta</CardTitle>
-                        <CardDescription className="text-lg mt-2">Bem-vindo ao CIAS</CardDescription>
+                        <CardDescription className="text-lg mt-2">Bem-vindo ao Irriga-Cias</CardDescription>
                     </div>
                 </CardHeader>
 

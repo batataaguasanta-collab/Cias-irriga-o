@@ -2,16 +2,19 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
-export default function PivotPositionIndicator({ position = 0, onChange, readonly = false, parcela = 'Alta' }) {
+export default function PivotPositionIndicator({ position = 0, onChange, readonly = false, parcela = 'ALTA' }) {
   const radius = 100;
   const center = 120;
   const strokeWidth = 20;
 
+  // Normalizar parcela para garantir comparação correta
+  const parcelaNorm = parcela ? parcela.toUpperCase() : 'ALTA';
+
   // Determinar ranges de parcela
   const parcelaRanges = {
-    'Alta': { start: 0, end: 180, color: '#3b82f6' },
-    'Baixa': { start: 181, end: 360, color: '#8b5cf6' },
-    'Total': { start: 0, end: 360, color: '#10b981' }
+    'ALTA': { start: 0, end: 180, color: '#3b82f6' },
+    'BAIXA': { start: 181, end: 360, color: '#8b5cf6' },
+    'TOTAL': { start: 0, end: 360, color: '#10b981' }
   };
 
   // Convert position (0-360) to radians, starting from left (9 o'clock)
@@ -37,9 +40,9 @@ export default function PivotPositionIndicator({ position = 0, onChange, readonl
 
   const ticks = [0, 90, 180, 240];
 
-  const isInCorrectParcela = parcela === 'Total'
+  const isInCorrectParcela = parcelaNorm === 'TOTAL'
     ? true
-    : parcela === 'Alta'
+    : parcelaNorm === 'ALTA'
       ? (position >= 0 && position <= 180)
       : (position >= 181 && position <= 360);
 
@@ -48,23 +51,23 @@ export default function PivotPositionIndicator({ position = 0, onChange, readonl
       <CardHeader className="pb-3 bg-gradient-to-r from-emerald-50 to-white border-b border-emerald-100">
         <div className="text-center">
           <CardTitle className="text-emerald-900 text-xl font-bold">
-            Posição do Pivô - Parcela {parcela}
+            Posição do Pivô - Parcela {parcelaNorm}
           </CardTitle>
           <div className="mt-2">
             <div className={cn(
               "inline-block px-4 py-2 rounded-lg text-sm font-bold",
-              parcela === 'Total' ? "bg-emerald-100 text-emerald-700" :
-                parcela === 'Alta' ? "bg-blue-100 text-blue-700" :
+              parcelaNorm === 'TOTAL' ? "bg-emerald-100 text-emerald-700" :
+                parcelaNorm === 'ALTA' ? "bg-blue-100 text-blue-700" :
                   "bg-purple-100 text-purple-700"
             )}>
-              {parcela === 'Total' && '✓ Cobertura Completa (0° - 360°)'}
-              {parcela === 'Alta' && '✓ Parte Alta (0° - 180°)'}
-              {parcela === 'Baixa' && '✓ Parte Baixa (180° - 360°)'}
+              {parcelaNorm === 'TOTAL' && '✓ Cobertura Completa (0° - 360°)'}
+              {parcelaNorm === 'ALTA' && '✓ Parte Alta (0° - 180°)'}
+              {parcelaNorm === 'BAIXA' && '✓ Parte Baixa (180° - 360°)'}
             </div>
           </div>
-          {!isInCorrectParcela && parcela !== 'Total' && (
+          {!isInCorrectParcela && parcelaNorm !== 'TOTAL' && (
             <div className="mt-2 bg-amber-50 border border-amber-200 rounded-lg p-2 text-amber-700 text-xs font-medium">
-              ⚠️ Atenção: Pivô está na parcela {parcela === 'Alta' ? 'Baixa' : 'Alta'}
+              ⚠️ Atenção: Pivô está na parcela {parcelaNorm === 'ALTA' ? 'Baixa' : 'Alta'}
             </div>
           )}
         </div>
@@ -76,12 +79,16 @@ export default function PivotPositionIndicator({ position = 0, onChange, readonl
           className={readonly ? "" : "cursor-pointer"}
           onClick={handleClick}
         >
-          {parcela === 'Total' ? (
+          {parcelaNorm === 'TOTAL' ? (
             <circle cx={center} cy={center} r={radius} fill="none" stroke="#e2e8f0" strokeWidth={strokeWidth} />
-          ) : parcela === 'Alta' ? (
-            <path d={`M ${center - radius} ${center} A ${radius} ${radius} 0 0 1 ${center + radius} ${center}`} fill="none" stroke="#e2e8f0" strokeWidth={strokeWidth} />
+          ) : parcelaNorm === 'ALTA' ? (
+            // Arco Superior (Arco-íris): 0 a 180 graus
+            // M (Esquerda) A ... 0 0 1 (Sweep 1 = Sentido Horário visual/Topo no caminho Left->Right)
+            <path d={`M ${center - radius} ${center} A ${radius} ${radius} 0 0 1 ${center + radius} ${center}`} fill="none" stroke={parcelaRanges['ALTA'].color} strokeWidth={strokeWidth} strokeLinecap="round" />
           ) : (
-            <path d={`M ${center + radius} ${center} A ${radius} ${radius} 0 0 1 ${center - radius} ${center}`} fill="none" stroke="#e2e8f0" strokeWidth={strokeWidth} />
+            // Arco Inferior (Sorriso): 180 a 360 graus
+            // M (Esquerda) A ... 0 0 0 (Sweep 0 = Sentido Anti-Horário visual/Baixo no caminho Left->Right)
+            <path d={`M ${center - radius} ${center} A ${radius} ${radius} 0 0 0 ${center + radius} ${center}`} fill="none" stroke={parcelaRanges['BAIXA'].color} strokeWidth={strokeWidth} strokeLinecap="round" />
           )}
 
           {ticks.map(tick => {

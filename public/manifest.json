@@ -1,0 +1,11 @@
+{
+    "name": "Irriga-Cias",
+    "short_name": "Irriga-Cias",
+    "description": "Sistema de Gestão de Irrigação",
+    "theme_color": "#2563eb",
+    "background_color": "#ffffff",
+    "display": "standalone",
+    "orientation": "portrait",
+    "scope": "/",
+    "start_url": "/"
+}

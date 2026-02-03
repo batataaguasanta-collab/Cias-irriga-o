@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getPivos, getOperadores, createOrdem } from '@/lib/supabase';
+import { getTalhoes, getOperadores, createOrdem } from '@/lib/supabase';
 import { useAuth } from '@/lib/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,14 +15,15 @@ import toast from 'react-hot-toast';
 
 export default function NovaOSForm({ onSuccess, onCancel }) {
   const [loading, setLoading] = useState(false);
-  const [pivos, setPivos] = useState([]);
+  const [talhoes, setTalhoes] = useState([]);
   const [operadores, setOperadores] = useState([]);
   const { user } = useAuth();
 
   const [formData, setFormData] = useState({
     data: format(new Date(), 'yyyy-MM-dd'),
-    pivo_id: '',
-    parcela: '',
+    hora_inicio: format(new Date(), 'HH:mm'),
+    talhao_id: '',
+    localizacao: 'TOTAL',
     movimentacao: 'Com Água',
     status_operacao: 'Irrigando',
     volume_tipo: 'milimetros',
@@ -34,27 +35,44 @@ export default function NovaOSForm({ onSuccess, onCancel }) {
     observacoes: '',
   });
 
+  const getCulturaIcon = (nome) => {
+    if (!nome) return '🌱';
+    const n = nome.toLowerCase();
+    if (n.includes('milho')) return '🌽';
+    if (n.includes('soja')) return '🌱';
+    if (n.includes('trigo')) return '🌾';
+    if (n.includes('feijão') || n.includes('feijao')) return '🫘';
+    if (n.includes('algodão') || n.includes('algodao')) return '☁️';
+    if (n.includes('café') || n.includes('cafe')) return '☕';
+    if (n.includes('batata')) return '🥔';
+    if (n.includes('tomate')) return '🍅';
+    if (n.includes('uva')) return '🍇';
+    if (n.includes('cana')) return '🎋';
+    return '🌱';
+  };
+
   useEffect(() => {
     loadData();
   }, []);
 
   const loadData = async () => {
     try {
-      const [pivosData, operadoresData] = await Promise.all([
-        getPivos(),
+      const [talhoesData, operadoresData] = await Promise.all([
+        getTalhoes(),
         getOperadores()
       ]);
-      // Filtrar apenas ativos
-      setPivos(pivosData.filter(p => p.ativo));
+      setTalhoes(talhoesData);
       setOperadores(operadoresData.filter(o => o.ativo));
     } catch (error) {
       console.error("Erro ao carregar dados:", error);
-      toast.error("Erro ao carregar pivôs e operadores");
+      toast.error("Erro ao carregar talhões e operadores");
     }
   };
 
-  const selectedPivo = pivos.find(p => p.id === formData.pivo_id);
+  const selectedTalhao = talhoes.find(t => t.id === formData.talhao_id);
   const selectedOperador = operadores.find(o => o.id === formData.operador_id);
+  // Inferir o pivô a partir do talhão selecionado
+  const selectedPivo = selectedTalhao?.pivo;
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -73,24 +91,46 @@ export default function NovaOSForm({ onSuccess, onCancel }) {
     e.preventDefault();
     setLoading(true);
 
-    const osData = {
-      ...formData,
-      numero_os: generateOSNumber(),
-      pivo_numero: selectedPivo?.numero,
-      operador_nome: selectedOperador?.nome,
-      solicitante: user?.user_metadata?.full_name || user?.email,
-      status: 'Pendente',
-      volume_valor: parseFloat(formData.volume_valor) || 0,
-      created_date: new Date().toISOString(),
-    };
+    if (!selectedPivo) {
+      toast.error("Erro: O talhão selecionado não tem um pivô associado.");
+      setLoading(false);
+      return;
+    }
 
     try {
+      // Concatenar talhão nas observações se não houver campo específico
+      // Concatenar talhão nas observações se não houver campo específico
+      const obsComTalhao = `Talhão: ${selectedTalhao.nome}\n${formData.observacoes}`;
+
+      // Preparar dados para o formato do banco de dados
+      const osData = {
+        data_inicio: formData.data,
+        hora_inicio: formData.hora_inicio,
+        pivo_id: selectedPivo.id, // ID do pivô vindo do talhão
+        operador_id: formData.operador_id,
+        parcela: formData.localizacao, // Usar a opção ALTA/BAIXA/TOTAL como 'parcela'
+        movimentacao: formData.movimentacao,
+        volume_tipo: formData.volume_tipo,
+        volume_valor: parseFloat(formData.volume_valor) || 0,
+        sentido_rotacao: formData.sentido_rotacao,
+        aplicar_insumos: formData.aplicar_insumos,
+        insumos_descricao: formData.insumos_descricao,
+        observacoes: obsComTalhao,
+        solicitante: user?.user_metadata?.full_name || user?.email,
+
+        numero_os: generateOSNumber(),
+        pivo_numero: selectedPivo.numero,
+        operador_nome: selectedOperador?.nome,
+        status: 'Pendente',
+      };
+
       await createOrdem(osData);
+
       toast.success("Ordem de serviço criada com sucesso!");
       onSuccess?.();
     } catch (error) {
       console.error("Erro ao criar OS:", error);
-      toast.error("Erro ao criar ordem de serviço");
+      toast.error(`Erro: ${error.message || "Falha ao criar OS"}`);
     } finally {
       setLoading(false);
     }
@@ -109,14 +149,27 @@ export default function NovaOSForm({ onSuccess, onCancel }) {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label>Data de Início</Label>
-              <Input
-                type="date"
-                value={formData.data}
-                onChange={(e) => handleChange('data', e.target.value)}
-                required
-                className="h-12"
-              />
+              <Label>Data e Hora de Início</Label>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Input
+                    type="date"
+                    value={formData.data}
+                    onChange={(e) => handleChange('data', e.target.value)}
+                    required
+                    className="h-12 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-3 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                  />
+                </div>
+                <div className="w-32 relative">
+                  <Input
+                    type="time"
+                    value={formData.hora_inicio}
+                    onChange={(e) => handleChange('hora_inicio', e.target.value)}
+                    required
+                    className="h-12 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-3 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                  />
+                </div>
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -140,34 +193,50 @@ export default function NovaOSForm({ onSuccess, onCancel }) {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <Label>Pivô</Label>
+              <Label>Talhão</Label>
               <Select
-                value={formData.pivo_id}
-                onValueChange={(v) => handleChange('pivo_id', v)}
+                value={formData.talhao_id}
+                onValueChange={(v) => handleChange('talhao_id', v)}
                 required
               >
                 <SelectTrigger className="h-12 bg-blue-50/50 border-blue-100">
-                  <SelectValue placeholder="Selecione o pivô" />
+                  <SelectValue placeholder="Selecione o talhão" />
                 </SelectTrigger>
                 <SelectContent>
-                  {pivos.map((pivo) => (
-                    <SelectItem key={pivo.id} value={pivo.id}>
-                      {pivo.numero} - {pivo.nome} ({pivo.area_hectares}ha)
+                  {talhoes.map((talhao) => (
+                    <SelectItem key={talhao.id} value={talhao.id}>
+                      <span className="flex items-center gap-2">
+                        <span className="text-lg" title={talhao.cultura?.nome}>{getCulturaIcon(talhao.cultura?.nome)}</span>
+                        <span>{talhao.nome}</span>
+                        {talhao.pivo && <span className="text-slate-400 text-xs ml-1">- Pivô {talhao.pivo.numero}</span>}
+                      </span>
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
+              {selectedPivo && (
+                <p className="text-sm text-emerald-600 font-medium ml-1">
+                  Pivô identificado: {selectedPivo.nome} (Pivô {selectedPivo.numero})
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
               <Label>Parcela / Localização</Label>
-              <Input
-                value={formData.parcela}
-                onChange={(e) => handleChange('parcela', e.target.value)}
-                placeholder="Ex: Todas, Setor A, 0-180 graus"
-                className="h-12"
+              <Select
+                value={formData.localizacao}
+                onValueChange={(v) => handleChange('localizacao', v)}
                 required
-              />
+              >
+                <SelectTrigger className="h-12">
+                  <SelectValue placeholder="Selecione a opção" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALTA">ALTA</SelectItem>
+                  <SelectItem value="BAIXA">BAIXA</SelectItem>
+                  <SelectItem value="TOTAL">TOTAL</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 

@@ -13,16 +13,33 @@ import {
   CheckCircle2,
   AlertTriangle,
   Filter,
-  RefreshCw
+  RefreshCw,
+  Sprout,
+  MapPin,
+  Settings
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import OSCard from '@/components/os/OSCard';
 import { motion, AnimatePresence } from 'framer-motion';
+import bgImage from '../assets/bg-irrigation.jpg';
+import { deleteOrdem } from '@/lib/supabase';
+import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function Home() {
   const [statusFilter, setStatusFilter] = useState('todas');
   const [searchTerm, setSearchTerm] = useState('');
+  const [ordemToDelete, setOrdemToDelete] = useState(null);
 
   const { data: ordens = [], isLoading, refetch } = useQuery({
     queryKey: ['ordens'],
@@ -62,9 +79,23 @@ export default function Home() {
     </Card>
   );
 
+  const handleDeleteOrdem = async () => {
+    if (!ordemToDelete) return;
+    try {
+      await deleteOrdem(ordemToDelete.id);
+      toast.success("Ordem excluída com sucesso");
+      refetch();
+    } catch (error) {
+      console.error("Erro ao excluir ordem:", error);
+      toast.error("Erro ao excluir ordem");
+    } finally {
+      setOrdemToDelete(null);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50" style={{
-      backgroundImage: 'url(https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=1920)',
+      backgroundImage: `url(${bgImage})`,
       backgroundSize: 'cover',
       backgroundPosition: 'center',
       backgroundAttachment: 'fixed'
@@ -76,9 +107,9 @@ export default function Home() {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
                 <h1 className="text-3xl font-bold text-white flex items-center gap-2">
-                  CIAS
+                  Irriga-Cias
                 </h1>
-                <p className="text-emerald-100 text-sm mt-1">Sistema de Irrigação</p>
+                <p className="text-emerald-100 text-sm mt-1">Gestão de Irrigação</p>
               </div>
               <Link to={createPageUrl('NovaOrdem')}>
                 <Button size="lg" className="bg-white text-emerald-700 hover:bg-emerald-50 h-14 px-8 text-lg shadow-xl font-bold">
@@ -90,7 +121,7 @@ export default function Home() {
           </div>
         </header>
 
-        <main className="max-w-7xl mx-auto px-4 py-6 space-y-6">
+        <main className="max-w-7xl mx-auto px-4 py-6 space-y-6 pb-28">
           {/* Stats */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard
@@ -201,15 +232,34 @@ export default function Home() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -20 }}
                     transition={{ delay: index * 0.05 }}
+
                   >
-                    <OSCard ordem={ordem} />
+                    <OSCard ordem={ordem} onDelete={setOrdemToDelete} />
                   </motion.div>
                 ))}
               </AnimatePresence>
             )}
           </div>
         </main>
-      </div>
-    </div>
+
+
+        <AlertDialog open={!!ordemToDelete} onOpenChange={() => setOrdemToDelete(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Excluir Ordem de Serviço</AlertDialogTitle>
+              <AlertDialogDescription>
+                Tem certeza que deseja excluir a ordem {ordemToDelete?.numero_os}? Esta ação não pode ser desfeita.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDeleteOrdem} className="bg-red-600 hover:bg-red-700">
+                Excluir
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div >
+    </div >
   );
 }

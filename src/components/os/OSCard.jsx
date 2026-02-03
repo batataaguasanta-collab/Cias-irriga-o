@@ -1,13 +1,13 @@
 import React from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Droplets, Clock, User, ArrowRight } from 'lucide-react';
+import { Droplets, Clock, User, ArrowRight, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import StatusBadge from './StatusBadge';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
-export default function OSCard({ ordem }) {
+export default function OSCard({ ordem, onDelete }) {
   return (
     <Card className="hover:shadow-lg transition-shadow border-l-4 border-l-emerald-500">
       <CardContent className="p-5">
@@ -40,7 +40,18 @@ export default function OSCard({ ordem }) {
             </div>
           </div>
 
-          <div className="flex items-center">
+          <div className="flex items-center gap-2">
+            {onDelete && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-red-500 hover:text-red-700 hover:bg-red-50 h-10 w-10 shrink-0"
+                onClick={() => onDelete(ordem)}
+                title="Excluir Ordem"
+              >
+                <Trash2 className="w-5 h-5" />
+              </Button>
+            )}
             <Link to={`/OperadorDashboard?os_id=${ordem.id}`} className="w-full md:w-auto">
               <Button className="w-full bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200">
                 Acessar Painel

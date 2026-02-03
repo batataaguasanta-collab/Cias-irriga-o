@@ -45,8 +45,8 @@ export default function Login() {
                         <Droplets className="w-10 h-10 text-emerald-600" />
                     </div>
                     <div>
-                        <CardTitle className="text-3xl font-bold text-emerald-900">CIAS</CardTitle>
-                        <CardDescription className="text-lg mt-2">Sistema de Gestão de Irrigação</CardDescription>
+                        <CardTitle className="text-3xl font-bold text-emerald-900">Irriga-Cias</CardTitle>
+                        <CardDescription className="text-lg mt-2">Gestão de Irrigação</CardDescription>
                     </div>
                 </CardHeader>
 

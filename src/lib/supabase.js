@@ -108,13 +108,21 @@ export const getOrdens = async (limit = 100) => {
 }
 
 export const getOrdensByPivo = async (pivoId) => {
+    console.log('🔍 Buscando ordens para pivô:', pivoId);
+
     const { data, error } = await supabase
         .from('ordens_servico')
         .select('*')
         .eq('pivo_id', pivoId)
+        .order('data_efetiva_inicio', { ascending: false, nullsFirst: false })
         .order('created_date', { ascending: false })
 
-    if (error) throw error
+    if (error) {
+        console.error('❌ Erro ao buscar ordens:', error);
+        throw error;
+    }
+
+    console.log(`✅ Ordens encontradas: ${data?.length || 0}`, data);
     return data
 }
 
@@ -265,4 +273,148 @@ export const calcularEficiencia = (tempoIrrigando, tempoParado) => {
     const tempoTotal = tempoIrrigando + tempoParado
     if (tempoTotal === 0) return 0
     return (tempoIrrigando / tempoTotal) * 100
+}
+
+// ============================================
+// CULTURAS
+// ============================================
+
+export const getCulturas = async () => {
+    const { data, error } = await supabase
+        .from('cultura')
+        .select('*')
+        .order('nome', { ascending: true })
+
+    if (error) throw error
+    return data
+}
+
+export const createCultura = async (cultura) => {
+    const { data, error } = await supabase
+        .from('cultura')
+        .insert([cultura])
+        .select()
+        .single()
+
+    if (error) throw error
+    return data
+}
+
+export const updateCultura = async (id, updates) => {
+    const { data, error } = await supabase
+        .from('cultura')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single()
+
+    if (error) throw error
+    return data
+}
+
+export const deleteCultura = async (id) => {
+    const { error } = await supabase
+        .from('cultura')
+        .delete()
+        .eq('id', id)
+
+    if (error) throw error
+}
+
+// ============================================
+// FAZENDAS
+// ============================================
+
+export const getFazendas = async () => {
+    const { data, error } = await supabase
+        .from('fazenda')
+        .select('*')
+        .order('nome', { ascending: true })
+
+    if (error) throw error
+    return data
+}
+
+export const createFazenda = async (fazenda) => {
+    const { data, error } = await supabase
+        .from('fazenda')
+        .insert([fazenda])
+        .select()
+        .single()
+
+    if (error) throw error
+    return data
+}
+
+export const updateFazenda = async (id, updates) => {
+    const { data, error } = await supabase
+        .from('fazenda')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single()
+
+    if (error) throw error
+    return data
+}
+
+
+export const deleteFazenda = async (id) => {
+    const { error } = await supabase
+        .from('fazenda')
+        .delete()
+        .eq('id', id)
+
+    if (error) throw error
+}
+
+// ============================================
+// TALHÕES
+// ============================================
+
+export const getTalhoes = async () => {
+    const { data, error } = await supabase
+        .from('talhao')
+        .select(`
+            *,
+            fazenda:fazenda_id(id, nome),
+            cultura:cultura_id(id, nome, variedade_cultivar, ciclo),
+            pivo:pivo_id(id, numero, nome, area_ha)
+        `)
+        .order('nome', { ascending: true })
+
+    if (error) throw error
+    return data
+}
+
+export const createTalhao = async (talhao) => {
+    const { data, error } = await supabase
+        .from('talhao')
+        .insert([talhao])
+        .select()
+        .single()
+
+    if (error) throw error
+    return data
+}
+
+export const updateTalhao = async (id, updates) => {
+    const { data, error } = await supabase
+        .from('talhao')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single()
+
+    if (error) throw error
+    return data
+}
+
+export const deleteTalhao = async (id) => {
+    const { error } = await supabase
+        .from('talhao')
+        .delete()
+        .eq('id', id)
+
+    if (error) throw error
 }

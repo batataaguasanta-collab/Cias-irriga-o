@@ -49,6 +49,8 @@
  */
 import AcompanhamentoIrrigacao from './pages/AcompanhamentoIrrigacao';
 import Cadastros from './pages/Cadastros';
+import CadastrosCulturaFazenda from './pages/CadastrosCulturaFazenda';
+import CadastroTalhoes from './pages/CadastroTalhoes';
 import HistoricoPivo from './pages/HistoricoPivo';
 import Home from './pages/Home';
 import NovaOrdem from './pages/NovaOrdem';
@@ -62,6 +64,8 @@ import __Layout from './Layout.jsx';
 export const PAGES = {
     "AcompanhamentoIrrigacao": AcompanhamentoIrrigacao,
     "Cadastros": Cadastros,
+    "CadastrosCulturaFazenda": CadastrosCulturaFazenda,
+    "CadastroTalhoes": CadastroTalhoes,
     "HistoricoPivo": HistoricoPivo,
     "Home": Home,
     "NovaOrdem": NovaOrdem,

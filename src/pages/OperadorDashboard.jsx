@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { getOrdemById, updateOrdem } from '@/lib/supabase';
+import { getOrdemById, updateOrdem, getTalhoes } from '@/lib/supabase';
+import { getCulturaIcon } from '@/lib/utils';
 import { useAuth } from '@/lib/AuthContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -26,7 +27,8 @@ import {
   User,
   Calendar,
   Loader2,
-  MessageSquare
+  MessageSquare,
+  Clock
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
@@ -37,10 +39,11 @@ import PivotPositionIndicator from '@/components/os/PivoPositionsIndicator';
 import ProgressoParcelaSelector from '@/components/os/ProgressoParcelaSelector';
 import EficienciaPanel from '@/components/os/EficienciaPainel';
 import { motion } from 'framer-motion';
+import bgImage from '../assets/bg-irrigation.jpg';
 
 export default function OperadorDashboard() {
   const urlParams = new URLSearchParams(window.location.search);
-  const osId = urlParams.get('os_id');
+  const osId = urlParams.get('os_id') || urlParams.get('ordem'); // Aceita tanto os_id quanto ordem
   const { user } = useAuth();
 
   const queryClient = useQueryClient();
@@ -48,6 +51,7 @@ export default function OperadorDashboard() {
   const [motivoParada, setMotivoParada] = useState('');
   const [motivoParadaDetalhe, setMotivoParadaDetalhe] = useState('');
   const [saving, setSaving] = useState(false);
+  const [interrupcoesModalOpen, setInterrupcoesModalOpen] = useState(false);
 
   const { data: ordem, isLoading } = useQuery({
     queryKey: ['ordem', osId],
@@ -58,29 +62,35 @@ export default function OperadorDashboard() {
     enabled: !!osId,
   });
 
+  const { data: talhoes } = useQuery({
+    queryKey: ['talhoes'],
+    queryFn: getTalhoes,
+    enabled: !!ordem,
+  });
+
   const updateMutation = useMutation({
     mutationFn: (data) => updateOrdem(osId, data),
     onSuccess: () => queryClient.invalidateQueries(['ordem', osId]),
   });
 
   // Função para calcular progresso baseado no ângulo e parcela
-  // 0° = Início da Alta (esquerda), 180° = Início da Baixa (direita)
+  // Lógica solicitada: Setores de 60 graus
   const calculateProgressFromAngle = (angle, parcela) => {
-    if (parcela === 'Total') {
-      if (angle >= 0 && angle <= 120) return 'Início';
-      if (angle >= 121 && angle <= 240) return 'Meio';
-      if (angle >= 241 && angle <= 360) return 'Fim';
-    } else if (parcela === 'Alta') {
-      // Alta: 0° - 180°
+    const p = parcela ? parcela.toUpperCase() : 'ALTA';
+
+    // Ranges definidos pelo usuário
+    if (p === 'ALTA' || p === 'TOTAL') {
       if (angle >= 0 && angle <= 60) return 'Início';
       if (angle >= 61 && angle <= 120) return 'Meio';
       if (angle >= 121 && angle <= 180) return 'Fim';
-    } else if (parcela === 'Baixa') {
-      // Baixa: 181° - 360°
+    }
+
+    if (p === 'BAIXA' || p === 'TOTAL') {
       if (angle >= 181 && angle <= 240) return 'Início';
       if (angle >= 241 && angle <= 300) return 'Meio';
       if (angle >= 301 && angle <= 360) return 'Fim';
     }
+
     return null;
   };
 
@@ -96,29 +106,30 @@ export default function OperadorDashboard() {
   };
 
   // Função para calcular ângulo central baseado no progresso e parcela
-  // Retorna o ângulo médio de cada setor (60° cada)
-  const calculateAngleFromProgress = (progresso, parcela) => {
-    if (parcela === 'Total') {
-      if (progresso === 'Início') return 60;  // Centro: 0-120°
-      if (progresso === 'Meio') return 180;   // Centro: 121-240°
-      if (progresso === 'Fim') return 300;    // Centro: 241-360°
-    } else if (parcela === 'Alta') {
-      // Alta: 0° - 180°, dividida em 3 setores de 60°
-      if (progresso === 'Início') return 30;  // Centro: 0-60° (A1)
-      if (progresso === 'Meio') return 90;    // Centro: 61-120° (A2)
-      if (progresso === 'Fim') return 150;    // Centro: 121-180° (A3)
-    } else if (parcela === 'Baixa') {
-      // Baixa: 181° - 360°, dividida em 3 setores de 60°
-      if (progresso === 'Início') return 210; // Centro: 181-240° (B1)
-      if (progresso === 'Meio') return 270;   // Centro: 241-300° (B2)
-      if (progresso === 'Fim') return 330;    // Centro: 301-360° (B3)
+  // Considera a posição atual para decidir qual setor usar no caso de 'TOTAL'
+  const calculateAngleFromProgress = (progresso, parcela, currentAngle = 0) => {
+    const p = parcela ? parcela.toUpperCase() : 'ALTA';
+    const isBaixa = currentAngle > 180;
+
+    // Se for TOTAL, decide baseado na posição atual (se está na alta ou baixa)
+    // Se for específico (ALTA ou BAIXA), força o setor correto
+    const targetSector = p === 'TOTAL' ? (isBaixa ? 'BAIXA' : 'ALTA') : p;
+
+    if (targetSector === 'ALTA') {
+      if (progresso === 'Início') return 30;  // Centro: 0-60°
+      if (progresso === 'Meio') return 90;    // Centro: 61-120°
+      if (progresso === 'Fim') return 150;    // Centro: 121-180°
+    } else if (targetSector === 'BAIXA') {
+      if (progresso === 'Início') return 210; // Centro: 181-240°
+      if (progresso === 'Meio') return 270;   // Centro: 241-300°
+      if (progresso === 'Fim') return 330;    // Centro: 301-360°
     }
     return null;
   };
 
   const handleUpdateProgresso = (progresso) => {
-    // Calcular ângulo baseado no progresso e parcela atual
-    const newAngle = calculateAngleFromProgress(progresso, ordem.parcela);
+    // Calcular ângulo baseado no progresso, parcela atual e posição atual
+    const newAngle = calculateAngleFromProgress(progresso, ordem.parcela, ordem.posicao_atual);
 
     // Atualizar progresso e ângulo automaticamente
     updateMutation.mutate({
@@ -131,7 +142,8 @@ export default function OperadorDashboard() {
     setSaving(true);
     await updateMutation.mutateAsync({
       status: 'Em Andamento',
-      data_inicio: new Date().toISOString()
+      data_efetiva_inicio: new Date().toISOString() // Mudança aqui: salva a data de start real
+      // Não sobrescrevemos mais a data_inicio original (programada)
     });
     setSaving(false);
   };
@@ -205,12 +217,12 @@ export default function OperadorDashboard() {
 
   return (
     <div className="min-h-screen bg-slate-900 text-white" style={{
-      backgroundImage: 'url(https://images.unsplash.com/photo-1574943320219-553eb213f72d?w=1920)',
+      backgroundImage: `url(${bgImage})`,
       backgroundSize: 'cover',
       backgroundPosition: 'center',
       backgroundAttachment: 'fixed'
     }}>
-      <div className="min-h-screen bg-gradient-to-b from-emerald-900/90 via-emerald-800/85 to-slate-900/90">
+      <div className="min-h-screen bg-gradient-to-b from-emerald-900/60 via-emerald-800/50 to-slate-900/70">
         {/* Header - high visibility */}
         <header className="bg-emerald-700 border-b border-emerald-600 sticky top-0 z-50 shadow-lg">
           <div className="max-w-2xl mx-auto px-4 py-4">
@@ -244,6 +256,17 @@ export default function OperadorDashboard() {
               </CardHeader>
               <CardContent className="pt-4">
                 <div className="grid grid-cols-2 gap-4 text-lg">
+                  <div className="flex items-center gap-3 p-4 bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-xl border border-indigo-200 col-span-2 sm:col-span-1">
+                    <Calendar className="w-6 h-6 text-indigo-600" />
+                    <div>
+                      <span className="text-indigo-600 text-xs block font-medium">Início Programado</span>
+                      <span className="font-bold text-indigo-900 text-sm">
+                        {ordem.data_inicio ? format(new Date(ordem.data_inicio), 'dd/MM/yyyy') : '--/--/--'}
+                        {ordem.hora_inicio ? ` às ${ordem.hora_inicio}` : ''}
+                      </span>
+                    </div>
+                  </div>
+
                   <div className="flex items-center gap-3 p-4 bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-xl border border-emerald-200">
                     <MapPin className="w-6 h-6 text-emerald-600" />
                     <div>
@@ -279,6 +302,25 @@ export default function OperadorDashboard() {
                       <span className="font-bold text-amber-900 text-sm">{ordem.operador_nome}</span>
                     </div>
                   </div>
+
+                  {/* Cultura Card */}
+                  <div className="flex items-center gap-3 p-4 bg-gradient-to-br from-rose-50 to-rose-100 rounded-xl border border-rose-200">
+                    <div className="text-2xl">
+                      {(() => {
+                        const talhao = talhoes?.find(t => t.pivo?.id === ordem.pivo_id); // Tenta achar talhão atual do pivô
+                        return getCulturaIcon(talhao?.cultura?.nome);
+                      })()}
+                    </div>
+                    <div>
+                      <span className="text-rose-600 text-xs block font-medium">Cultura</span>
+                      <span className="font-bold text-rose-900 text-sm">
+                        {(() => {
+                          const talhao = talhoes?.find(t => t.pivo?.id === ordem.pivo_id);
+                          return talhao?.cultura?.nome || 'Não identificada';
+                        })()}
+                      </span>
+                    </div>
+                  </div>
                 </div>
 
                 {ordem.aplicar_insumos && (
@@ -299,9 +341,12 @@ export default function OperadorDashboard() {
                   </div>
                 )}
 
-                {/* Painel de Eficiência */}
-                {ordem.data_inicio && (
-                  <EficienciaPanel ordem={ordem} />
+                {/* Painel de Eficiência - Só mostra após clicar em Iniciar */}
+                {ordem.data_efetiva_inicio && (
+                  <EficienciaPanel
+                    ordem={ordem}
+                    onInterrupcoesClick={() => setInterrupcoesModalOpen(true)}
+                  />
                 )}
               </CardContent>
             </Card>
@@ -436,6 +481,9 @@ export default function OperadorDashboard() {
           <DialogContent className="max-w-md bg-white">
             <DialogHeader>
               <DialogTitle className="text-xl">Interromper Operação</DialogTitle>
+              <DialogDescription>
+                Informe o motivo da interrupção da irrigação. Essas informações ficarão registradas no histórico.
+              </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div>
@@ -491,6 +539,110 @@ export default function OperadorDashboard() {
                 Confirmar Interrupção
               </Button>
             </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Modal de Detalhes das Interrupções */}
+        <Dialog open={interrupcoesModalOpen} onOpenChange={setInterrupcoesModalOpen}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-bold text-emerald-900 flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-amber-600" />
+                Detalhes das Interrupções - OS: {ordem?.numero_os}
+              </DialogTitle>
+              <DialogDescription className="text-slate-600">
+                Visualize todas as interrupções registradas para esta ordem de serviço
+              </DialogDescription>
+            </DialogHeader>
+
+            {ordem?.historico_interrupcoes && ordem.historico_interrupcoes.length > 0 ? (
+              <div className="mt-4">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-amber-50 border-b-2 border-amber-200">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-amber-900 uppercase tracking-wider">#</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-amber-900 uppercase tracking-wider">Motivo</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-amber-900 uppercase tracking-wider">Observação</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-amber-900 uppercase tracking-wider">Início da Interrupção</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-amber-900 uppercase tracking-wider">Retomada</th>
+                        <th className="px-4 py-3 text-center text-xs font-semibold text-amber-900 uppercase tracking-wider">Tempo Parado</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200">
+                      {ordem.historico_interrupcoes.map((interrupcao, index) => {
+                        const inicio = new Date(interrupcao.data_interrupcao);
+                        const fim = interrupcao.data_retomada ? new Date(interrupcao.data_retomada) : null;
+                        const tempoParado = fim ? Math.floor((fim - inicio) / 1000) : null;
+
+                        const formatarTempo = (segundos) => {
+                          if (!segundos) return '-';
+                          const horas = Math.floor(segundos / 3600);
+                          const minutos = Math.floor((segundos % 3600) / 60);
+                          const segs = segundos % 60;
+                          return `${horas}h ${minutos}m ${segs}s`;
+                        };
+
+                        return (
+                          <tr key={index} className={`hover:bg-amber-50/50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}`}>
+                            <td className="px-4 py-3 text-sm font-semibold text-slate-700">{index + 1}</td>
+                            <td className="px-4 py-3 text-sm text-slate-900 font-medium">
+                              {interrupcao.motivo}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-slate-600 italic">
+                              {interrupcao.detalhes || '-'}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-slate-700">
+                              {format(inicio, "dd/MM/yyyy 'às' HH:mm:ss", { locale: ptBR })}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-slate-700">
+                              {fim ? (
+                                format(fim, "dd/MM/yyyy 'às' HH:mm:ss", { locale: ptBR })
+                              ) : (
+                                <span className="text-amber-600 font-medium">Em andamento</span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${tempoParado ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600'
+                                }`}>
+                                {formatarTempo(tempoParado)}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Resumo Total */}
+                <div className="mt-6 p-4 bg-amber-50 rounded-lg border border-amber-200">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-5 h-5 text-amber-700" />
+                      <span className="font-semibold text-amber-900">Tempo Total Parado:</span>
+                    </div>
+                    <span className="text-lg font-bold text-amber-800">
+                      {(() => {
+                        const totalSegundos = ordem.historico_interrupcoes.reduce((acc, int) => {
+                          const inicio = new Date(int.data_interrupcao);
+                          const fim = int.data_retomada ? new Date(int.data_retomada) : new Date();
+                          return acc + Math.floor((fim - inicio) / 1000);
+                        }, 0);
+                        const horas = Math.floor(totalSegundos / 3600);
+                        const minutos = Math.floor((totalSegundos % 3600) / 60);
+                        const segs = totalSegundos % 60;
+                        return `${horas}h ${minutos}m ${segs}s`;
+                      })()}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="py-8 text-center text-slate-500">
+                Nenhuma interrupção registrada para esta ordem.
+              </div>
+            )}
           </DialogContent>
         </Dialog>
       </div>

@@ -3,19 +3,25 @@ import { getOrdens } from '@/lib/supabase';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2, Droplets } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Loader2, Droplets, Eye, AlertTriangle } from 'lucide-react';
 import { format, differenceInMinutes } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import bgImage from '../assets/bg-irrigation.jpg';
+import { createPageUrl } from '../utils';
 
 export default function AcompanhamentoIrrigacao() {
-  const { data: ordensEmAndamento = [], isLoading, refetch } = useQuery({
-    queryKey: ['ordens-em-andamento'],
+  const { data: todasOrdens = [], isLoading, refetch } = useQuery({
+    queryKey: ['todas-ordens'],
     queryFn: async () => {
       const data = await getOrdens();
-      return data.filter(o => o.status === 'Em Andamento');
+      return data;
     },
-    refetchInterval: 10000, // Atualiza a cada 10 segundos
+    refetchInterval: 10000,
   });
+
+  const ordensEmAndamento = todasOrdens.filter(o => o.status === 'Em Andamento');
+  const ordensInterrompidas = todasOrdens.filter(o => o.status === 'Interrompida');
 
   // Função para determinar posição A (Alta) ou B (Baixa) baseada no ângulo
   const determinarPosicao = (angulo) => {
@@ -23,25 +29,28 @@ export default function AcompanhamentoIrrigacao() {
     return 'B';
   };
 
-  // Função para calcular percentual de progresso baseado no ângulo e parcela
+  // Função para calcular percentual de progresso
   const calcularPercentual = (angulo, parcela) => {
-    if (parcela === 'Total') {
+    const parcelaUpper = parcela?.toUpperCase() || '';
+
+    if (parcelaUpper === 'TOTAL') {
       return ((angulo / 360) * 100).toFixed(0);
-    } else if (parcela === 'Alta') {
+    } else if (parcelaUpper === 'ALTA') {
       if (angulo >= 0 && angulo <= 180) {
         return ((angulo / 180) * 100).toFixed(0);
       }
-      return 0;
-    } else if (parcela === 'Baixa') {
-      if (angulo >= 181 && angulo <= 360) {
+      return '100';
+    } else if (parcelaUpper === 'BAIXA') {
+      if (angulo > 180 && angulo <= 360) {
         return (((angulo - 180) / 180) * 100).toFixed(0);
       }
-      return 0;
+      if (angulo <= 180) return '0';
+      return '100';
     }
     return 0;
   };
 
-  // Função para calcular tempo irrigando
+  // Função para calcular tempo irrigando com desconto de paradas
   const calcularTempoIrrigando = (ordem) => {
     if (!ordem.data_inicio) return '-';
 
@@ -49,16 +58,18 @@ export default function AcompanhamentoIrrigacao() {
     const agora = new Date();
     let tempoTotalMinutos = differenceInMinutes(agora, inicio);
 
-    // Descontar tempo parado
+    // Descontar tempo parado para todas as interrupções (inclusive a atual se estiver parada)
     if (ordem.historico_interrupcoes && ordem.historico_interrupcoes.length > 0) {
       ordem.historico_interrupcoes.forEach(interrupcao => {
         const inicioParada = new Date(interrupcao.data_interrupcao);
         const fimParada = interrupcao.data_retomada
           ? new Date(interrupcao.data_retomada)
-          : agora;
+          : agora; // Se não tem retomada, conta até agora
         tempoTotalMinutos -= differenceInMinutes(fimParada, inicioParada);
       });
     }
+
+    if (tempoTotalMinutos < 0) tempoTotalMinutos = 0; // Evitar negativo se relógio variar
 
     if (tempoTotalMinutos < 60) return `${tempoTotalMinutos}min`;
     const horas = Math.floor(tempoTotalMinutos / 60);
@@ -66,9 +77,91 @@ export default function AcompanhamentoIrrigacao() {
     return `${horas}h ${mins}min`;
   };
 
+  const renderTable = (ordens, type) => (
+    <div className="overflow-x-auto">
+      <Table>
+        <TableHeader>
+          <TableRow className={`${type === 'interrompida' ? 'bg-amber-50' : 'bg-emerald-50'}`}>
+            <TableHead className={`font-bold ${type === 'interrompida' ? 'text-amber-900' : 'text-emerald-900'}`}>Pivô</TableHead>
+            <TableHead className={`font-bold ${type === 'interrompida' ? 'text-amber-900' : 'text-emerald-900'}`}>Parcela</TableHead>
+            <TableHead className={`font-bold ${type === 'interrompida' ? 'text-amber-900' : 'text-emerald-900'}`}>Ordem</TableHead>
+            <TableHead className={`font-bold ${type === 'interrompida' ? 'text-amber-900' : 'text-emerald-900'} text-center`}>Ângulo</TableHead>
+            <TableHead className={`font-bold ${type === 'interrompida' ? 'text-amber-900' : 'text-emerald-900'} text-center`}>Progresso</TableHead>
+            <TableHead className={`font-bold ${type === 'interrompida' ? 'text-amber-900' : 'text-emerald-900'} text-center`}>Posição</TableHead>
+            <TableHead className={`font-bold ${type === 'interrompida' ? 'text-amber-900' : 'text-emerald-900'}`}>Operador</TableHead>
+            <TableHead className={`font-bold ${type === 'interrompida' ? 'text-amber-900' : 'text-emerald-900'}`}>Tempo Líquido</TableHead>
+            <TableHead className={`font-bold ${type === 'interrompida' ? 'text-amber-900' : 'text-emerald-900'} text-center`}>Ações</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {ordens.map((ordem) => {
+            const angulo = ordem.posicao_atual || 0;
+            const posicao = determinarPosicao(angulo);
+            const percentual = calcularPercentual(angulo, ordem.parcela);
+
+            return (
+              <TableRow key={ordem.id} className={`${type === 'interrompida' ? 'hover:bg-amber-50' : 'hover:bg-emerald-50'} transition-colors`}>
+                <TableCell className={`font-semibold ${type === 'interrompida' ? 'text-amber-900' : 'text-emerald-900'}`}>
+                  Pivô {ordem.pivo_numero}
+                </TableCell>
+                <TableCell>
+                  <span className={`inline-block px-3 py-1 rounded-full text-sm font-semibold ${type === 'interrompida' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'}`}>
+                    {ordem.parcela}
+                  </span>
+                </TableCell>
+                <TableCell className="font-mono text-sm text-slate-700">
+                  {ordem.numero_os}
+                </TableCell>
+                <TableCell className="text-center">
+                  <span className="font-bold text-purple-900">{angulo}°</span>
+                </TableCell>
+                <TableCell className="text-center">
+                  <div className="flex flex-col items-center gap-1">
+                    <span className={`font-bold ${type === 'interrompida' ? 'text-amber-900' : 'text-emerald-900'}`}>{percentual}%</span>
+                    <div className="w-full bg-slate-200 rounded-full h-2">
+                      <div
+                        className={`h-2 rounded-full transition-all duration-300 ${type === 'interrompida' ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                        style={{ width: `${percentual}%` }}
+                      />
+                    </div>
+                  </div>
+                </TableCell>
+                <TableCell className="text-center">
+                  <span className={`inline-flex items-center justify-center w-10 h-10 rounded-full text-xl font-bold ${posicao === 'A'
+                    ? 'bg-emerald-100 text-emerald-700 border-2 border-emerald-500'
+                    : 'bg-blue-100 text-blue-700 border-2 border-blue-500'
+                    }`}>
+                    {posicao}
+                  </span>
+                </TableCell>
+                <TableCell className="text-slate-700">
+                  {ordem.operador_nome}
+                </TableCell>
+                <TableCell>
+                  <span className="font-semibold text-blue-900">
+                    {calcularTempoIrrigando(ordem)}
+                  </span>
+                </TableCell>
+                <TableCell className="text-center">
+                  <Link
+                    to={`${createPageUrl('OperadorDashboard')}?os_id=${ordem.id}`}
+                    className={`inline-flex items-center justify-center w-10 h-10 rounded-full transition-colors ${type === 'interrompida' ? 'bg-amber-100 text-amber-600 hover:bg-amber-200 hover:text-amber-800' : 'bg-emerald-100 text-emerald-600 hover:bg-emerald-200 hover:text-emerald-800'}`}
+                    title="Ver Detalhes"
+                  >
+                    <Eye className="w-5 h-5" />
+                  </Link>
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-slate-50" style={{
-      backgroundImage: 'url(https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=1920)',
+      backgroundImage: `url(${bgImage})`,
       backgroundSize: 'cover',
       backgroundPosition: 'center',
       backgroundAttachment: 'fixed'
@@ -87,9 +180,10 @@ export default function AcompanhamentoIrrigacao() {
           </div>
         </header>
 
-        <main className="max-w-7xl mx-auto px-4 py-6 pb-32">
-          <Card className="bg-white/95 backdrop-blur shadow-xl border-emerald-500 border-t-4">
-            <CardHeader>
+        <main className="max-w-7xl mx-auto px-4 py-6 pb-32 space-y-6">
+          {/* Ordens em Andamento */}
+          <Card className="bg-white/95 backdrop-blur shadow-xl border-emerald-500 border-t-4 max-h-[45vh] flex flex-col">
+            <CardHeader className="py-4">
               <div className="flex justify-between items-center">
                 <CardTitle className="text-emerald-900 flex items-center gap-2">
                   <span className="text-2xl">Ordens em Andamento</span>
@@ -99,7 +193,7 @@ export default function AcompanhamentoIrrigacao() {
                 </CardTitle>
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent className="overflow-y-auto flex-1 p-0">
               {isLoading ? (
                 <div className="flex items-center justify-center py-20">
                   <Loader2 className="w-10 h-10 text-emerald-500 animate-spin" />
@@ -110,75 +204,35 @@ export default function AcompanhamentoIrrigacao() {
                   <p className="text-slate-600 text-lg">Nenhuma irrigação em andamento no momento</p>
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="bg-emerald-50">
-                        <TableHead className="font-bold text-emerald-900">Pivô</TableHead>
-                        <TableHead className="font-bold text-emerald-900">Parcela</TableHead>
-                        <TableHead className="font-bold text-emerald-900">Ordem</TableHead>
-                        <TableHead className="font-bold text-emerald-900 text-center">Ângulo</TableHead>
-                        <TableHead className="font-bold text-emerald-900 text-center">Progresso</TableHead>
-                        <TableHead className="font-bold text-emerald-900 text-center">Posição</TableHead>
-                        <TableHead className="font-bold text-emerald-900">Operador</TableHead>
-                        <TableHead className="font-bold text-emerald-900">Tempo Irrigando</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {ordensEmAndamento.map((ordem) => {
-                        const angulo = ordem.posicao_atual || 0;
-                        const posicao = determinarPosicao(angulo);
-                        const percentual = calcularPercentual(angulo, ordem.parcela);
+                renderTable(ordensEmAndamento, 'andamento')
+              )}
+            </CardContent>
+          </Card>
 
-                        return (
-                          <TableRow key={ordem.id} className="hover:bg-emerald-50 transition-colors">
-                            <TableCell className="font-semibold text-emerald-900">
-                              Pivô {ordem.pivo_numero}
-                            </TableCell>
-                            <TableCell>
-                              <span className="inline-block bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-semibold">
-                                {ordem.parcela}
-                              </span>
-                            </TableCell>
-                            <TableCell className="font-mono text-sm text-slate-700">
-                              {ordem.numero_os}
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <span className="font-bold text-purple-900">{angulo}°</span>
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <div className="flex flex-col items-center gap-1">
-                                <span className="font-bold text-emerald-900">{percentual}%</span>
-                                <div className="w-full bg-slate-200 rounded-full h-2">
-                                  <div
-                                    className="bg-emerald-500 h-2 rounded-full transition-all duration-300"
-                                    style={{ width: `${percentual}%` }}
-                                  />
-                                </div>
-                              </div>
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <span className={`inline-flex items-center justify-center w-10 h-10 rounded-full text-xl font-bold ${posicao === 'A'
-                                  ? 'bg-emerald-100 text-emerald-700 border-2 border-emerald-500'
-                                  : 'bg-blue-100 text-blue-700 border-2 border-blue-500'
-                                }`}>
-                                {posicao}
-                              </span>
-                            </TableCell>
-                            <TableCell className="text-slate-700">
-                              {ordem.operador_nome}
-                            </TableCell>
-                            <TableCell>
-                              <span className="font-semibold text-blue-900">
-                                {calcularTempoIrrigando(ordem)}
-                              </span>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
+          {/* Ordens Interrompidas */}
+          <Card className="bg-white/95 backdrop-blur shadow-xl border-amber-500 border-t-4 max-h-[45vh] flex flex-col">
+            <CardHeader className="py-4">
+              <div className="flex justify-between items-center">
+                <CardTitle className="text-amber-900 flex items-center gap-2">
+                  <span className="text-2xl">Ordens Interrompidas</span>
+                  <span className="bg-amber-100 text-amber-700 text-lg px-3 py-1 rounded-full font-bold">
+                    {ordensInterrompidas.length}
+                  </span>
+                </CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent className="overflow-y-auto flex-1 p-0">
+              {isLoading ? (
+                <div className="flex items-center justify-center py-20">
+                  <Loader2 className="w-10 h-10 text-amber-500 animate-spin" />
                 </div>
+              ) : ordensInterrompidas.length === 0 ? (
+                <div className="text-center py-16">
+                  <AlertTriangle className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+                  <p className="text-slate-600 text-lg">Nenhuma ordem interrompida no momento</p>
+                </div>
+              ) : (
+                renderTable(ordensInterrompidas, 'interrompida')
               )}
             </CardContent>
           </Card>
