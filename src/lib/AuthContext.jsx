@@ -1,7 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 
-const AuthContext = createContext();
+const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -54,30 +54,55 @@ export const AuthProvider = ({ children }) => {
         message: error.message
       });
     } finally {
-      setIsLoadingAuth(false);
+      // Verifica se há tokens na URL (indica retorno de OAuth)
+      // Suporta tanto Implicit Flow (hash) quanto PKCE (search param 'code')
+      const isAuthRedirect = (window.location.hash && (
+        window.location.hash.includes('access_token') ||
+        window.location.hash.includes('refresh_token') ||
+        window.location.hash.includes('error_description')
+      )) || (window.location.search && (
+        window.location.search.includes('code=') ||
+        window.location.search.includes('error_description=')
+      ));
+
+      if (isAuthRedirect) {
+        console.log('Auth redirect detected, waiting for Supabase to process session...');
+      }
+
+      if (!isAuthRedirect) {
+        setIsLoadingAuth(false);
+      }
     }
   };
 
   const signInWithEmail = async (email, password) => {
+    console.log('[AuthContext] Attempting login with email:', email);
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('[AuthContext] Supabase login error:', error);
+        throw error;
+      }
+
+      console.log('[AuthContext] Login successful:', data);
       return data;
     } catch (error) {
-      console.error('Erro no login:', error);
+      console.error('[AuthContext] Login cleanup error:', error);
       setAuthError({
         type: 'login_failed',
-        message: error.message
+        message: error.message,
+        details: error
       });
       throw error;
     }
   };
 
   const signUpWithEmail = async (email, password, metadata = {}) => {
+    console.log('[AuthContext] Attempting signup with email:', email);
     try {
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -87,13 +112,25 @@ export const AuthProvider = ({ children }) => {
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('[AuthContext] Supabase signup error:', error);
+        throw error;
+      }
+
+      console.log('[AuthContext] Signup successful:', data);
+
+      // Check if session is missing, which implies email confirmation is required
+      if (data.user && !data.session) {
+        console.log('[AuthContext] User created but no session. Email confirmation likely required.');
+      }
+
       return data;
     } catch (error) {
-      console.error('Erro no cadastro:', error);
+      console.error('[AuthContext] Signup cleanup error:', error);
       setAuthError({
         type: 'signup_failed',
-        message: error.message
+        message: error.message,
+        details: error
       });
       throw error;
     }

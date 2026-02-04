@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useAuth } from '@/lib/AuthContext';
 import { toast } from 'sonner';
 import {
   getPivos, createPivo, updatePivo, deletePivo,
@@ -43,7 +44,8 @@ import {
   MapPin,
   Grid3x3,
   Warehouse,
-  LayoutDashboard
+  LayoutDashboard,
+  LogOut
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
@@ -91,6 +93,19 @@ export default function Cadastros() {
     } else {
       // Internal navigation
       setActiveTab(tabParam);
+    }
+  };
+
+  const { logout } = useAuth();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      toast.success('Você saiu do sistema.');
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout failed', error);
+      toast.error('Erro ao sair.');
     }
   };
 
@@ -178,6 +193,20 @@ export default function Cadastros() {
       stats: { count: "", label: "Acesso Rápido" },
       actions: {
         primary: { label: "Ir para Início", onClick: () => handleNavigate('Home') },
+        secondary: null
+      }
+    },
+    {
+      entity: "logout",
+      title: "Sair do Sistema",
+      description: "Encerrar sessão e trocar de usuário.",
+      icon: LogOut,
+      theme_color: "text-red-600",
+      bg_color: "bg-red-100",
+      btn_color: "bg-red-600 hover:bg-red-700",
+      stats: { count: "", label: "Logout" },
+      actions: {
+        primary: { label: "Sair Agora", onClick: handleLogout },
         secondary: null
       }
     }

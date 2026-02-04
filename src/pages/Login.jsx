@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Droplets, Mail, Lock, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -11,19 +12,43 @@ export default function Login() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const { signInWithEmail, signInWithGoogle } = useAuth();
+    const [errorMsg, setErrorMsg] = useState(null);
+    const { signInWithEmail, signInWithGoogle, isAuthenticated } = useAuth();
     const navigate = useNavigate();
+
+    React.useEffect(() => {
+        if (isAuthenticated) {
+            navigate('/');
+        }
+    }, [isAuthenticated, navigate]);
 
     const handleEmailLogin = async (e) => {
         e.preventDefault();
         setIsLoading(true);
+        setErrorMsg(null);
 
         try {
             await signInWithEmail(email, password);
             toast.success('Login realizado com sucesso!');
-            navigate('/');
         } catch (error) {
-            toast.error(error.message || 'Erro ao fazer login');
+            console.error("Login Page Error:", error);
+            if (error.message.includes("Email not confirmed")) {
+                setErrorMsg({
+                    title: "Email não confirmado",
+                    description: "Por favor, verifique sua caixa de entrada e confirme seu email antes de fazer login."
+                });
+            } else if (error.message.includes("Invalid login credentials")) {
+                setErrorMsg({
+                    title: "Credenciais inválidas",
+                    description: "Email ou senha incorretos. Tente novamente."
+                });
+            } else {
+                setErrorMsg({
+                    title: "Erro ao entrar",
+                    description: error.message || "Ocorreu um erro inesperado."
+                });
+            }
+            toast.error('Erro ao fazer login');
         } finally {
             setIsLoading(false);
         }
@@ -51,6 +76,12 @@ export default function Login() {
                 </CardHeader>
 
                 <CardContent className="space-y-6">
+                    {errorMsg && (
+                        <Alert variant="destructive">
+                            <AlertTitle>{errorMsg.title}</AlertTitle>
+                            <AlertDescription>{errorMsg.description}</AlertDescription>
+                        </Alert>
+                    )}
                     <form onSubmit={handleEmailLogin} className="space-y-4">
                         <div className="space-y-2">
                             <label className="text-sm font-medium text-slate-700 flex items-center gap-2">

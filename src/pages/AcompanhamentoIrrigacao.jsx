@@ -4,11 +4,12 @@ import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Link } from 'react-router-dom';
-import { Loader2, Droplets, Eye, AlertTriangle } from 'lucide-react';
+import { Loader2, Droplets, Eye, AlertTriangle, ArrowLeft } from 'lucide-react';
 import { format, differenceInMinutes } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import bgImage from '../assets/bg-irrigation.jpg';
 import { createPageUrl } from '../utils';
+import { Button } from "@/components/ui/button";
 
 export default function AcompanhamentoIrrigacao() {
   const { data: todasOrdens = [], isLoading, refetch } = useQuery({
@@ -170,11 +171,18 @@ export default function AcompanhamentoIrrigacao() {
         {/* Header */}
         <header className="bg-emerald-700 border-b border-emerald-600 sticky top-0 z-50 shadow-lg">
           <div className="max-w-7xl mx-auto px-4 py-5">
-            <div className="flex items-center gap-3">
-              <Droplets className="w-8 h-8 text-white" />
-              <div>
-                <h1 className="text-3xl font-bold text-white">Acompanhamento de Irrigação</h1>
-                <p className="text-emerald-100 text-sm mt-1">Monitoramento em tempo real</p>
+            <div className="flex items-center gap-4">
+              <Link to={createPageUrl('Home')}>
+                <Button variant="ghost" size="icon" className="text-white hover:bg-emerald-600/50 hover:text-white">
+                  <ArrowLeft className="w-6 h-6" />
+                </Button>
+              </Link>
+              <div className="flex items-center gap-3">
+                <Droplets className="w-8 h-8 text-white" />
+                <div>
+                  <h1 className="text-3xl font-bold text-white">Acompanhamento de Irrigação</h1>
+                  <p className="text-emerald-100 text-sm mt-1">Monitoramento em tempo real</p>
+                </div>
               </div>
             </div>
           </div>

@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Droplets, Mail, Lock, User, Loader2, ArrowLeft } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -25,6 +26,8 @@ export default function Cadastro() {
         });
     };
 
+    const [successMsg, setSuccessMsg] = useState(null);
+
     const handleSubmit = async (e) => {
         e.preventDefault();
 
@@ -34,21 +37,43 @@ export default function Cadastro() {
             return;
         }
 
-        if (formData.password.length < 6) {
-            toast.error('A senha deve ter pelo menos 6 caracteres');
+        if (formData.password.length < 8) {
+            toast.error('A senha deve ter pelo menos 8 caracteres');
             return;
         }
 
         setIsLoading(true);
 
         try {
-            await signUpWithEmail(formData.email, formData.password, {
+            console.log("Iniciando cadastro para:", formData.email);
+            const { user, session } = await signUpWithEmail(formData.email, formData.password, {
                 full_name: formData.name
             });
-            toast.success('Conta criada com sucesso! Verifique seu email para confirmar.');
-            navigate('/login');
+
+            console.log("Cadastro finalizado. User:", user?.id, "Session:", !!session);
+
+            if (user && !session) {
+                // Email confirmation required
+                setSuccessMsg({
+                    title: "Verifique seu email",
+                    description: `Enviamos um link de confirmação para ${formData.email}. Por favor, clique no link para ativar sua conta antes de fazer login.`
+                });
+                toast.success('Cadastro realizado! Verifique seu email.');
+            } else {
+                toast.success('Conta criada com sucesso!');
+                navigate('/login');
+            }
         } catch (error) {
-            toast.error(error.message || 'Erro ao criar conta');
+            console.error("Cadastro Error:", error);
+            let msg = error.message || 'Erro ao criar conta';
+
+            if (msg.includes('Password should be') || msg.includes('weak_password')) {
+                msg = 'A senha é muito fraca. Use pelo menos 8 caracteres, maiúsculas, minúsculas, números e símbolos.';
+            } else if (msg.includes('User already registered')) {
+                msg = 'Este email já está cadastrado.';
+            }
+
+            toast.error(msg);
         } finally {
             setIsLoading(false);
         }
@@ -86,87 +111,105 @@ export default function Cadastro() {
                 </CardHeader>
 
                 <CardContent className="space-y-6">
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
-                                <User className="w-4 h-4" />
-                                Nome Completo
-                            </label>
-                            <Input
-                                type="text"
-                                name="name"
-                                placeholder="João Silva"
-                                value={formData.name}
-                                onChange={handleChange}
-                                required
-                                className="h-12"
-                            />
-                        </div>
+                    {successMsg ? (
+                        <Alert className="bg-emerald-50 border-emerald-200">
+                            <AlertTitle className="text-emerald-800">{successMsg.title}</AlertTitle>
+                            <AlertDescription className="text-emerald-700">
+                                {successMsg.description}
+                                <div className="mt-4">
+                                    <Button
+                                        variant="outline"
+                                        className="w-full border-emerald-200 text-emerald-700 hover:bg-emerald-100"
+                                        onClick={() => navigate('/login')}
+                                    >
+                                        Ir para Login
+                                    </Button>
+                                </div>
+                            </AlertDescription>
+                        </Alert>
+                    ) : (
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
+                                    <User className="w-4 h-4" />
+                                    Nome Completo
+                                </label>
+                                <Input
+                                    type="text"
+                                    name="name"
+                                    placeholder="João Silva"
+                                    value={formData.name}
+                                    onChange={handleChange}
+                                    required
+                                    className="h-12"
+                                />
+                            </div>
 
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
-                                <Mail className="w-4 h-4" />
-                                Email
-                            </label>
-                            <Input
-                                type="email"
-                                name="email"
-                                placeholder="seu@email.com"
-                                value={formData.email}
-                                onChange={handleChange}
-                                required
-                                className="h-12"
-                            />
-                        </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
+                                    <Mail className="w-4 h-4" />
+                                    Email
+                                </label>
+                                <Input
+                                    type="email"
+                                    name="email"
+                                    placeholder="seu@email.com"
+                                    value={formData.email}
+                                    onChange={handleChange}
+                                    required
+                                    className="h-12"
+                                />
+                            </div>
 
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
-                                <Lock className="w-4 h-4" />
-                                Senha
-                            </label>
-                            <Input
-                                type="password"
-                                name="password"
-                                placeholder="Mínimo 6 caracteres"
-                                value={formData.password}
-                                onChange={handleChange}
-                                required
-                                className="h-12"
-                                minLength={6}
-                            />
-                        </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
+                                    <Lock className="w-4 h-4" />
+                                    Senha
+                                </label>
+                                <Input
+                                    type="password"
+                                    name="password"
+                                    placeholder="Mínimo 6 caracteres"
+                                    value={formData.password}
+                                    onChange={handleChange}
+                                    required
+                                    className="h-12"
+                                    minLength={6}
+                                />
+                            </div>
 
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
-                                <Lock className="w-4 h-4" />
-                                Confirmar Senha
-                            </label>
-                            <Input
-                                type="password"
-                                name="confirmPassword"
-                                placeholder="Digite a senha novamente"
-                                value={formData.confirmPassword}
-                                onChange={handleChange}
-                                required
-                                className="h-12"
-                            />
-                        </div>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
+                                    <Lock className="w-4 h-4" />
+                                    Confirmar Senha
+                                </label>
+                                <Input
+                                    type="password"
+                                    name="confirmPassword"
+                                    placeholder="Digite a senha novamente"
+                                    value={formData.confirmPassword}
+                                    onChange={handleChange}
+                                    required
+                                    className="h-12"
+                                />
+                            </div>
 
-                        <Button
-                            type="submit"
-                            disabled={isLoading}
-                            className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-lg"
-                        >
-                            {isLoading ? (
-                                <>
-                                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                                    Criando conta...
-                                </>
-                            ) : (
-                                'Criar Conta'
-                            )}
-                        </Button>
-                    </form>
+                            <Button
+                                type="submit"
+                                disabled={isLoading}
+                                className="w-full h-12 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-lg"
+                            >
+                                {isLoading ? (
+                                    <>
+                                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                                        Criando conta...
+                                    </>
+                                ) : (
+                                    'Criar Conta'
+                                )}
+                            </Button>
+                        </form>
+                    )}
 
                     <div className="relative">
                         <div className="absolute inset-0 flex items-center">

@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster.jsx"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client.js'
 import { pagesConfig } from './pages.config'
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound.jsx';
 import { AuthProvider, useAuth } from '@/lib/AuthContext.jsx';
 
@@ -81,8 +81,7 @@ const ProtectedRoute = ({ children }) => {
 
   if (!isAuthenticated) {
     // Redireciona para login e salva a localização atual para retornar depois
-    window.location.href = '/Login';
-    return null;
+    return <Navigate to="/Login" replace />;
   }
 
   return children;
