@@ -9,13 +9,28 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Loader2, Save, Send } from 'lucide-react';
+import { Loader2, Save, Send, Check, ChevronsUpDown } from 'lucide-react';
+import { cn } from "@/lib/utils";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 
 export default function NovaOSForm({ onSuccess, onCancel }) {
   const [loading, setLoading] = useState(false);
   const [talhoes, setTalhoes] = useState([]);
+  const [openTalhao, setOpenTalhao] = useState(false);
   const [operadores, setOperadores] = useState([]);
   const { user } = useAuth();
 
@@ -194,26 +209,64 @@ export default function NovaOSForm({ onSuccess, onCancel }) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label>Talhão</Label>
-              <Select
-                value={formData.talhao_id}
-                onValueChange={(v) => handleChange('talhao_id', v)}
-                required
-              >
-                <SelectTrigger className="h-12 bg-blue-50/50 border-blue-100">
-                  <SelectValue placeholder="Selecione o talhão" />
-                </SelectTrigger>
-                <SelectContent>
-                  {talhoes.map((talhao) => (
-                    <SelectItem key={talhao.id} value={talhao.id}>
-                      <span className="flex items-center gap-2">
-                        <span className="text-lg" title={talhao.cultura?.nome}>{getCulturaIcon(talhao.cultura?.nome)}</span>
-                        <span>{talhao.nome}</span>
-                        {talhao.pivo && <span className="text-slate-400 text-xs ml-1">- Pivô {talhao.pivo.numero}</span>}
-                      </span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={openTalhao} onOpenChange={setOpenTalhao} modal={true}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={openTalhao}
+                    className="w-full justify-between h-12 bg-blue-50/50 border-blue-100"
+                  >
+                    {formData.talhao_id
+                      ? (
+                        (() => {
+                          const talhao = talhoes.find((t) => t.id === formData.talhao_id)
+                          return talhao ? (
+                            <span className="flex items-center gap-2 truncate">
+                              <span className="text-lg">{getCulturaIcon(talhao.cultura?.nome)}</span>
+                              <span>{talhao.nome}</span>
+                              {talhao.pivo && <span className="text-slate-400 text-xs ml-1 opacity-70">- Pivô {talhao.pivo.numero}</span>}
+                            </span>
+                          ) : "Selecione o talhão"
+                        })()
+                      )
+                      : "Selecione o talhão"}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[300px] sm:w-[350px] p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Pesquisar talhão..." />
+                    <CommandList>
+                      <CommandEmpty>Nenhum talhão encontrado.</CommandEmpty>
+                      <CommandGroup>
+                        {talhoes.map((talhao) => (
+                          <CommandItem
+                            key={talhao.id}
+                            value={talhao.nome}
+                            onSelect={() => {
+                              handleChange('talhao_id', talhao.id)
+                              setOpenTalhao(false)
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                formData.talhao_id === talhao.id ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            <span className="flex items-center gap-2">
+                              <span className="text-lg">{getCulturaIcon(talhao.cultura?.nome)}</span>
+                              <span>{talhao.nome}</span>
+                              {talhao.pivo && <span className="text-slate-400 text-xs ml-1">- Pivô {talhao.pivo.numero}</span>}
+                            </span>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
               {selectedPivo && (
                 <p className="text-sm text-emerald-600 font-medium ml-1">
                   Pivô identificado: {selectedPivo.nome} (Pivô {selectedPivo.numero})

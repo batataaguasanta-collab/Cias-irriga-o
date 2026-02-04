@@ -28,7 +28,9 @@ import {
   Calendar,
   Loader2,
   MessageSquare,
-  Clock
+  Clock,
+  Home,
+  Activity
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
@@ -227,11 +229,18 @@ export default function OperadorDashboard() {
         <header className="bg-emerald-700 border-b border-emerald-600 sticky top-0 z-50 shadow-lg">
           <div className="max-w-2xl mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
-              <Link to={createPageUrl('Home')}>
-                <Button variant="ghost" size="icon" className="h-12 w-12 text-white hover:bg-emerald-600">
-                  <ArrowLeft className="w-6 h-6" />
-                </Button>
-              </Link>
+              <div className="flex items-center gap-1">
+                <Link to={createPageUrl('Home')}>
+                  <Button variant="ghost" size="icon" className="h-12 w-12 text-white hover:bg-emerald-600" title="Início">
+                    <Home className="w-6 h-6" />
+                  </Button>
+                </Link>
+                <Link to={createPageUrl('AcompanhamentoIrrigacao')}>
+                  <Button variant="ghost" size="icon" className="h-12 w-12 text-white hover:bg-emerald-600" title="Acompanhamento">
+                    <Activity className="w-6 h-6" />
+                  </Button>
+                </Link>
+              </div>
               <div className="text-center">
                 <h1 className="text-xl font-bold text-white">Ordem de Irrigação</h1>
               </div>
