@@ -169,12 +169,12 @@ export default function Cadastro() {
                                 <Input
                                     type="password"
                                     name="password"
-                                    placeholder="Mínimo 6 caracteres"
+                                    placeholder="Mínimo 8 caracteres"
                                     value={formData.password}
                                     onChange={handleChange}
                                     required
                                     className="h-12"
-                                    minLength={6}
+                                    minLength={8}
                                 />
                             </div>
 
