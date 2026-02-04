@@ -57,6 +57,7 @@ import NovaOrdem from './pages/NovaOrdem';
 import OperadorDashboard from './pages/OperadorDashboard';
 import Login from './pages/Login';
 import Cadastro from './pages/Cadastro';
+import ResetPassword from './pages/ResetPassword';
 import __Layout from './Layout.jsx';
 
 
@@ -72,6 +73,7 @@ export const PAGES = {
     "OperadorDashboard": OperadorDashboard,
     "Login": Login,
     "Cadastro": Cadastro,
+    "ResetPassword": ResetPassword,
 }
 
 export const pagesConfig = {

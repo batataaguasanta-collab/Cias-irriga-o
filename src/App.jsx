@@ -42,6 +42,7 @@ const AuthenticatedApp = () => {
     <Routes>
       <Route path="/Login" element={<Pages.Login />} />
       <Route path="/Cadastro" element={<Pages.Cadastro />} />
+      <Route path="/reset-password" element={<Pages.ResetPassword />} />
 
       <Route path="/" element={
         <ProtectedRoute>
@@ -52,7 +53,7 @@ const AuthenticatedApp = () => {
       } />
 
       {Object.entries(Pages).map(([path, Page]) => {
-        if (path === 'Login' || path === 'Cadastro') return null;
+        if (path === 'Login' || path === 'Cadastro' || path === 'ResetPassword') return null;
 
         return (
           <Route
