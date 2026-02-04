@@ -1,12 +1,11 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { getOrdens } from '@/lib/supabase';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Link } from 'react-router-dom';
 import { Loader2, Droplets, Eye, AlertTriangle, ArrowLeft } from 'lucide-react';
-import { format, differenceInMinutes } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { differenceInMinutes } from 'date-fns';
 import bgImage from '../assets/bg-irrigation.jpg';
 import { createPageUrl } from '../utils';
 import { Button } from "@/components/ui/button";

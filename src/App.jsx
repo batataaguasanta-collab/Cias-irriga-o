@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster.jsx"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client.js'
 import { pagesConfig } from './pages.config'
-import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate, useNavigate } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound.jsx';
 import { AuthProvider, useAuth } from '@/lib/AuthContext.jsx';
 
@@ -16,7 +16,16 @@ const LayoutWrapper = ({ children, currentPageName }) => Layout ?
   : <>{children}</>;
 
 const AuthenticatedApp = () => {
-  const { isLoadingAuth } = useAuth();
+  const { isLoadingAuth, authEvent } = useAuth();
+  const navigate = useNavigate();
+
+  // Redirect to reset password page if we detect a recovery event
+  useEffect(() => {
+    if (authEvent === 'PASSWORD_RECOVERY') {
+      console.log('Password recovery event detected, diverting to reset page');
+      navigate('/reset-password');
+    }
+  }, [authEvent, navigate]);
 
   // Show loading spinner while checking auth
   if (isLoadingAuth) {

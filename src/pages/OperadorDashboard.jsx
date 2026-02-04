@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { getOrdemById, updateOrdem, getTalhoes } from '@/lib/supabase';
 import { getCulturaIcon } from '@/lib/utils';
 import { useAuth } from '@/lib/AuthContext';
@@ -16,9 +16,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  ArrowLeft,
   Play,
-  Pause,
   CheckCircle2,
   AlertTriangle,
   Droplets,

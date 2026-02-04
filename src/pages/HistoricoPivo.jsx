@@ -5,14 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { ArrowLeft, Loader2, TrendingUp, Clock, AlertTriangle, CheckCircle2, Eye, X } from 'lucide-react';
+import { ArrowLeft, Loader2, TrendingUp, Clock, AlertTriangle, CheckCircle2, Eye } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import StatusBadge from '@/components/os/StatusBadge';
-import EficienciaPanel from '@/components/os/EficienciaPainel';
-import HistoricoInterrupcoes from '@/components/os/HistoricoInterrupcoes';
 import bgImage from '../assets/bg-irrigation.jpg';
 
 export default function HistoricoPivo() {

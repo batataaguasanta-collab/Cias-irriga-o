@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
-import { Home, Settings, Droplets, History, Activity } from 'lucide-react';
+import { Home, Settings, History, Activity } from 'lucide-react';
 
 export default function Layout({ children, currentPageName }) {
   // Pages that don't need navigation (have their own back buttons)

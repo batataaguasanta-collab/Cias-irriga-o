@@ -8,6 +8,7 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   const [authError, setAuthError] = useState(null);
+  const [authEvent, setAuthEvent] = useState(null);
 
   useEffect(() => {
     // Verificar sessão inicial
@@ -16,6 +17,9 @@ export const AuthProvider = ({ children }) => {
     // Escutar mudanças de autenticação
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log("Auth event:", event);
+        setAuthEvent(event);
+
         if (session?.user) {
           setUser(session.user);
           setIsAuthenticated(true);
@@ -189,6 +193,7 @@ export const AuthProvider = ({ children }) => {
       isAuthenticated,
       isLoadingAuth,
       authError,
+      authEvent,
       signInWithEmail,
       signUpWithEmail,
       signInWithGoogle,
