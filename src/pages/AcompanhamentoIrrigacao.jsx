@@ -1,16 +1,20 @@
 import React from 'react';
+import { useAuth } from '@/lib/AuthContext';
+import { toast } from 'sonner';
 import { getOrdens } from '@/lib/supabase';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Link } from 'react-router-dom';
-import { Loader2, Droplets, Eye, AlertTriangle, ArrowLeft } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Loader2, Droplets, Eye, AlertTriangle, ArrowLeft, LogOut } from 'lucide-react';
 import { differenceInMinutes } from 'date-fns';
 import bgImage from '../assets/bg-irrigation.jpg';
 import { createPageUrl } from '../utils';
 import { Button } from "@/components/ui/button";
 
 export default function AcompanhamentoIrrigacao() {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
   const { data: todasOrdens = [], isLoading, refetch } = useQuery({
     queryKey: ['todas-ordens'],
     queryFn: async () => {
@@ -183,6 +187,24 @@ export default function AcompanhamentoIrrigacao() {
                   <p className="text-emerald-100 text-sm mt-1">Monitoramento em tempo real</p>
                 </div>
               </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="ml-auto text-red-100 hover:bg-red-600 hover:text-white"
+                onClick={async () => {
+                  try {
+                    await logout();
+                    toast.success('Você saiu do sistema.');
+                    navigate('/login');
+                  } catch (error) {
+                    console.error('Logout failed', error);
+                    toast.error('Erro ao sair.');
+                  }
+                }}
+                title="Sair do Sistema"
+              >
+                <LogOut className="w-6 h-6" />
+              </Button>
             </div>
           </div>
         </header>

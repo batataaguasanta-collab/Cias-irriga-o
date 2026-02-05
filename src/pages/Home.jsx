@@ -12,9 +12,11 @@ import {
   Clock,
   CheckCircle2,
   AlertTriangle,
-  RefreshCw
+  RefreshCw,
+  LogOut
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { useAuth } from '@/lib/AuthContext';
+import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import OSCard from '@/components/os/OSCard';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -33,6 +35,8 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export default function Home() {
+  const { logout } = useAuth();
+  const navigate = useNavigate(); // Assume useNavigate is imported or add it
   const [statusFilter, setStatusFilter] = useState('todas');
   const [searchTerm, setSearchTerm] = useState('');
   const [ordemToDelete, setOrdemToDelete] = useState(null);
@@ -107,12 +111,32 @@ export default function Home() {
                 </h1>
                 <p className="text-emerald-100 text-sm mt-1">Gestão de Irrigação</p>
               </div>
-              <Link to={createPageUrl('NovaOrdem')}>
-                <Button size="lg" className="bg-white text-emerald-700 hover:bg-emerald-50 h-14 px-8 text-lg shadow-xl font-bold">
-                  <Plus className="w-6 h-6 mr-2" />
-                  Nova Ordem
+              <div className="flex bg-white/10 rounded-lg p-1 gap-2">
+                <Link to={createPageUrl('NovaOrdem')}>
+                  <Button size="lg" className="bg-white text-emerald-700 hover:bg-emerald-50 h-12 px-6 text-base shadow-sm font-bold">
+                    <Plus className="w-5 h-5 mr-2" />
+                    Nova Ordem
+                  </Button>
+                </Link>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-12 w-12 text-red-100 hover:bg-red-600 hover:text-white"
+                  onClick={async () => {
+                    try {
+                      await logout();
+                      toast.success('Você saiu do sistema.');
+                      navigate('/login');
+                    } catch (error) {
+                      console.error('Logout failed', error);
+                      toast.error('Erro ao sair.');
+                    }
+                  }}
+                  title="Sair do Sistema"
+                >
+                  <LogOut className="w-6 h-6" />
                 </Button>
-              </Link>
+              </div>
             </div>
           </div>
         </header>

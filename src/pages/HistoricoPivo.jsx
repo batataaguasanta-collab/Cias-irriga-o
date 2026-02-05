@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
+import { useAuth } from '@/lib/AuthContext';
+import { toast } from 'sonner';
 import { getPivos, getOrdensByPivo } from '@/lib/supabase';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { ArrowLeft, Loader2, TrendingUp, Clock, AlertTriangle, CheckCircle2, Eye } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { ArrowLeft, Loader2, TrendingUp, Clock, AlertTriangle, CheckCircle2, Eye, LogOut } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -14,6 +16,8 @@ import StatusBadge from '@/components/os/StatusBadge';
 import bgImage from '../assets/bg-irrigation.jpg';
 
 export default function HistoricoPivo() {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
   const [selectedPivoId, setSelectedPivoId] = useState('');
   const [interrupcoesModal, setInterrupcoesModal] = useState({ open: false, ordem: null });
 
@@ -65,6 +69,24 @@ export default function HistoricoPivo() {
                 <h1 className="text-3xl font-bold text-white">Histórico do Pivô</h1>
                 <p className="text-emerald-100 text-sm mt-1">Análise de desempenho e rastreabilidade</p>
               </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="ml-auto text-red-100 hover:bg-red-600 hover:text-white"
+                onClick={async () => {
+                  try {
+                    await logout();
+                    toast.success('Você saiu do sistema.');
+                    navigate('/login');
+                  } catch (error) {
+                    console.error('Logout failed', error);
+                    toast.error('Erro ao sair.');
+                  }
+                }}
+                title="Sair do Sistema"
+              >
+                <LogOut className="w-6 h-6" />
+              </Button>
             </div>
           </div>
         </header>

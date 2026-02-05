@@ -13,7 +13,7 @@ export default function Layout({ children, currentPageName }) {
       {children}
 
       {/* Bottom Navigation */}
-      {(currentPageName === 'Home' || currentPageName === 'HistoricoPivo' || currentPageName === 'AcompanhamentoIrrigacao') && (
+      {(currentPageName === 'Home' || currentPageName === 'HistoricoPivo' || currentPageName === 'AcompanhamentoIrrigacao' || currentPageName === 'OperadorDashboard') && (
         <nav className="fixed bottom-0 left-0 right-0 bg-emerald-700 border-t-4 border-emerald-600 shadow-2xl z-50">
           <div className="max-w-4xl mx-auto flex justify-around py-3">
             <Link

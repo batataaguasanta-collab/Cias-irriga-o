@@ -88,91 +88,95 @@ export default function EficienciaPanel({ ordem, onInterrupcoesClick }) {
   };
 
   return (
-    <div className="border-t border-slate-200 pt-4 mt-4">
-      <h4 className="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2">
-        <TrendingUp className="w-4 h-4" />
+    <div className="border-t border-slate-200 pt-6 mt-6">
+      <h4 className="text-base font-bold text-slate-800 mb-4 flex items-center gap-2">
+        <TrendingUp className="w-5 h-5" />
         Índice de Eficiência Operacional
       </h4>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         {/* Horários */}
-        <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
-          <div className="flex items-center gap-2 mb-1">
+        <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+          <div className="flex items-center gap-2 mb-2">
             <Play className="w-4 h-4 text-blue-600" />
-            <span className="text-xs text-slate-600">Início Real</span>
+            <span className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Início Real</span>
           </div>
-          <p className="text-sm font-bold text-slate-900">
-            {format(new Date(ordem.data_efetiva_inicio), 'HH:mm', { locale: ptBR })}
-          </p>
-          <p className="text-xs text-slate-500">
-            {format(new Date(ordem.data_efetiva_inicio), 'dd/MM/yyyy', { locale: ptBR })}
-          </p>
+          <div>
+            <p className="text-xl font-bold text-slate-900">
+              {format(new Date(ordem.data_efetiva_inicio), 'HH:mm', { locale: ptBR })}
+            </p>
+            <p className="text-xs text-slate-500 font-medium">
+              {format(new Date(ordem.data_efetiva_inicio), 'dd/MM/yyyy', { locale: ptBR })}
+            </p>
+          </div>
         </div>
 
         {ordem.data_conclusao && (
-          <div className="bg-slate-50 p-3 rounded-lg border border-slate-200">
-            <div className="flex items-center gap-2 mb-1">
+          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+            <div className="flex items-center gap-2 mb-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-              <span className="text-xs text-slate-600">Conclusão</span>
+              <span className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Conclusão</span>
             </div>
-            <p className="text-sm font-bold text-slate-900">
-              {format(new Date(ordem.data_conclusao), 'HH:mm', { locale: ptBR })}
-            </p>
-            <p className="text-xs text-slate-500">
-              {format(new Date(ordem.data_conclusao), 'dd/MM/yyyy', { locale: ptBR })}
-            </p>
+            <div>
+              <p className="text-xl font-bold text-slate-900">
+                {format(new Date(ordem.data_conclusao), 'HH:mm', { locale: ptBR })}
+              </p>
+              <p className="text-xs text-slate-500 font-medium">
+                {format(new Date(ordem.data_conclusao), 'dd/MM/yyyy', { locale: ptBR })}
+              </p>
+            </div>
           </div>
         )}
 
         {/* Tempos */}
-        <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
-          <div className="flex items-center gap-2 mb-1">
+        <div className="bg-blue-50 p-4 rounded-xl border border-blue-200 shadow-sm flex flex-col justify-between">
+          <div className="flex items-center gap-2 mb-2">
             <Clock className="w-4 h-4 text-blue-600" />
-            <span className="text-xs text-blue-600">Tempo Total</span>
+            <span className="text-xs font-semibold text-blue-700 uppercase tracking-wide">Tempo Total</span>
           </div>
-          <p className="text-sm font-bold text-blue-900">{eficiencia.tempoTotal}</p>
+          <p className="text-xl font-bold text-blue-900">{eficiencia.tempoTotal}</p>
         </div>
 
-        <div className="bg-emerald-50 p-3 rounded-lg border border-emerald-200">
-          <div className="flex items-center gap-2 mb-1">
+        <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-200 shadow-sm flex flex-col justify-between">
+          <div className="flex items-center gap-2 mb-2">
             <Clock className="w-4 h-4 text-emerald-600" />
-            <span className="text-xs text-emerald-600">Irrigando</span>
+            <span className="text-xs font-semibold text-emerald-700 uppercase tracking-wide">Irrigando</span>
           </div>
-          <p className="text-sm font-bold text-emerald-900">{eficiencia.tempoIrrigando}</p>
+          <p className="text-xl font-bold text-emerald-900">{eficiencia.tempoIrrigando}</p>
         </div>
 
-        <div className="bg-red-50 p-3 rounded-lg border border-red-200">
-          <div className="flex items-center gap-2 mb-1">
+        <div className="bg-red-50 p-4 rounded-xl border border-red-200 shadow-sm flex flex-col justify-between">
+          <div className="flex items-center gap-2 mb-2">
             <Pause className="w-4 h-4 text-red-600" />
-            <span className="text-xs text-red-600">Parado</span>
+            <span className="text-xs font-semibold text-red-700 uppercase tracking-wide">Parado</span>
           </div>
-          <p className="text-sm font-bold text-red-900">{eficiencia.tempoParado}</p>
+          <p className="text-xl font-bold text-red-900">{eficiencia.tempoParado}</p>
         </div>
 
         {/* Eficiência */}
-        <div className={`p-3 rounded-lg border ${getCorEficiencia(parseFloat(eficiencia.percentualEficiencia))}`}>
-          <div className="flex items-center gap-2 mb-1">
+        <div className={`p-4 rounded-xl border shadow-sm flex flex-col justify-between ${getCorEficiencia(parseFloat(eficiencia.percentualEficiencia))}`}>
+          <div className="flex items-center gap-2 mb-2">
             <TrendingUp className="w-4 h-4" />
-            <span className="text-xs">Eficiência</span>
+            <span className="text-xs font-semibold uppercase tracking-wide">Eficiência</span>
           </div>
-          <p className="text-2xl font-bold">{eficiencia.percentualEficiencia}%</p>
+          <p className="text-3xl font-bold">{eficiencia.percentualEficiencia.toString().replace('.', ',')}%</p>
         </div>
       </div>
 
       {/* Estatísticas de Interrupções */}
       {eficiencia.numeroInterrupcoes > 0 && (
-        <div className="mt-3 grid grid-cols-2 gap-3">
+        <div className="mt-4 grid grid-cols-2 gap-4">
           <button
             type="button"
             onClick={() => onInterrupcoesClick && onInterrupcoesClick()}
-            className="bg-amber-50 p-3 rounded-lg border border-amber-200 hover:bg-amber-100 transition-colors cursor-pointer text-left"
+            className="bg-amber-50 p-4 rounded-xl border border-amber-200 hover:bg-amber-100 transition-colors cursor-pointer text-left shadow-sm flex flex-col justify-between h-full"
           >
-            <span className="text-xs text-amber-600 block">Número de Interrupções</span>
-            <p className="text-lg font-bold text-amber-900">{eficiencia.numeroInterrupcoes}</p>
+            <span className="text-xs font-semibold text-amber-700 uppercase tracking-wide block mb-2">Número de Interrupções</span>
+            <p className="text-2xl font-bold text-amber-900">{eficiencia.numeroInterrupcoes}</p>
           </button>
-          <div className="bg-purple-50 p-3 rounded-lg border border-purple-200">
-            <span className="text-xs text-purple-600 block">Tempo Médio de Retomada</span>
-            <p className="text-lg font-bold text-purple-900">{eficiencia.tempoMedioRetomada}</p>
+          <div className="bg-purple-50 p-4 rounded-xl border border-purple-200 shadow-sm flex flex-col justify-between h-full">
+            <span className="text-xs font-semibold text-purple-700 uppercase tracking-wide block mb-2">Tempo Médio de Retomada</span>
+            <p className="text-2xl font-bold text-purple-900">{eficiencia.tempoMedioRetomada}</p>
           </div>
         </div>
       )}

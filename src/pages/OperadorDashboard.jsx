@@ -27,10 +27,13 @@ import {
   Loader2,
   MessageSquare,
   Clock,
-  Home,
+
+  LogOut,
+  ArrowLeft,
   Activity
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { createPageUrl } from '@/utils';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -44,7 +47,8 @@ import bgImage from '../assets/bg-irrigation.jpg';
 export default function OperadorDashboard() {
   const urlParams = new URLSearchParams(window.location.search);
   const osId = urlParams.get('os_id') || urlParams.get('ordem'); // Aceita tanto os_id quanto ordem
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   const queryClient = useQueryClient();
   const [showStopDialog, setShowStopDialog] = useState(false);
@@ -225,41 +229,42 @@ export default function OperadorDashboard() {
       <div className="min-h-screen bg-gradient-to-b from-emerald-900/60 via-emerald-800/50 to-slate-900/70">
         {/* Header - high visibility */}
         <header className="bg-emerald-700 border-b border-emerald-600 sticky top-0 z-50 shadow-lg">
-          <div className="max-w-2xl mx-auto px-4 py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1">
+          <div className="max-w-7xl mx-auto px-4 py-3">
+            <div className="flex items-center justify-between gap-4">
+
+              <div className="flex items-center gap-4">
                 <Link to={createPageUrl('Home')}>
-                  <Button variant="ghost" size="icon" className="h-12 w-12 text-white hover:bg-emerald-600" title="Início">
-                    <Home className="w-6 h-6" />
+                  <Button variant="ghost" size="icon" className="text-white hover:bg-emerald-600/50 hover:text-white" title="Voltar ao Início">
+                    <ArrowLeft className="w-6 h-6" />
                   </Button>
                 </Link>
-                <Link to={createPageUrl('AcompanhamentoIrrigacao')}>
-                  <Button variant="ghost" size="icon" className="h-12 w-12 text-white hover:bg-emerald-600" title="Acompanhamento">
-                    <Activity className="w-6 h-6" />
-                  </Button>
-                </Link>
+                <h1 className="text-xl font-bold text-white whitespace-nowrap">Ordem de Irrigação</h1>
               </div>
-              <div className="text-center">
-                <h1 className="text-xl font-bold text-white">Ordem de Irrigação</h1>
-              </div>
-              <StatusBadge status={ordem.status} size="large" />
+
+
             </div>
           </div>
         </header>
 
-        <main className="max-w-2xl mx-auto px-4 py-6 space-y-6 pb-40">
+        <main className="max-w-2xl mx-auto px-4 py-6 space-y-6 pb-24">
           {/* Order Info Card */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
           >
             <Card className="bg-white/95 backdrop-blur border-emerald-500 border-t-4 shadow-2xl">
-              <CardHeader className="border-b border-emerald-100 bg-gradient-to-r from-emerald-50 to-white">
-                <CardTitle className="text-2xl text-emerald-900 flex items-center gap-3 font-bold">
-                  <Droplets className="w-8 h-8 text-emerald-600" />
-                  Pivô {ordem.pivo_numero}
-                </CardTitle>
-                <p className="text-emerald-700 text-sm font-semibold">OS: {ordem.numero_os}</p>
+              <CardHeader className="border-b border-emerald-100 bg-gradient-to-r from-emerald-50 to-white pb-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <CardTitle className="text-2xl text-emerald-900 flex items-center gap-3 font-bold">
+                      <Droplets className="w-8 h-8 text-emerald-600" />
+                      Pivô {ordem.pivo_numero}
+                    </CardTitle>
+                    <p className="text-emerald-700 text-sm font-semibold ml-11">OS: {ordem.numero_os}</p>
+                  </div>
+
+
+                </div>
               </CardHeader>
               <CardContent className="pt-4">
                 <div className="grid grid-cols-2 gap-4 text-lg">
@@ -348,6 +353,68 @@ export default function OperadorDashboard() {
                   </div>
                 )}
 
+                {/* Control Panel */}
+                <div className="mt-6 p-6 bg-gradient-to-b from-blue-50 to-blue-100 rounded-xl border border-blue-200 shadow-md">
+                  <div className="flex flex-col gap-5">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-blue-200 pb-4 gap-4">
+                      <div className="flex justify-center sm:justify-start w-full sm:w-auto">
+                        <h3 className="text-xl font-bold text-blue-900 flex items-center gap-2">
+                          <Activity className="w-6 h-6" /> Painel de Controle
+                        </h3>
+                      </div>
+                      <div className="flex justify-center sm:justify-end w-full sm:w-auto">
+                        <div className="scale-125 origin-center sm:origin-right">
+                          <StatusBadge status={ordem.status} />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Action Buttons */}
+                    {ordem.status !== 'Concluída' && (
+                      <div className="flex flex-col gap-4 pt-2 w-full">
+                        {ordem.status === 'Pendente' ? (
+                          <Button
+                            onClick={handleIniciar}
+                            disabled={saving}
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg font-bold w-full h-14 text-xl tracking-wide"
+                          >
+                            {saving ? <Loader2 className="w-6 h-6 animate-spin mr-3" /> : <Play className="w-6 h-6 mr-3" />}
+                            INICIAR OPERAÇÃO
+                          </Button>
+                        ) : ordem.status === 'Interrompida' ? (
+                          <Button
+                            onClick={handleRetomar}
+                            disabled={saving}
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg font-bold w-full h-14 text-xl tracking-wide"
+                          >
+                            {saving ? <Loader2 className="w-6 h-6 animate-spin mr-3" /> : <Play className="w-6 h-6 mr-3" />}
+                            RETOMAR OPERAÇÃO
+                          </Button>
+                        ) : (
+                          <div className="flex flex-col sm:flex-row gap-4 w-full">
+                            <Button
+                              onClick={() => setShowStopDialog(true)}
+                              disabled={saving}
+                              className="bg-red-600 hover:bg-red-700 text-white shadow-lg font-bold flex-1 h-14 text-xl tracking-wide"
+                            >
+                              <AlertTriangle className="w-6 h-6 mr-3" />
+                              INTERROMPER
+                            </Button>
+                            <Button
+                              onClick={handleConcluir}
+                              disabled={saving}
+                              className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg font-bold flex-1 h-14 text-xl tracking-wide"
+                            >
+                              {saving ? <Loader2 className="w-6 h-6 animate-spin mr-3" /> : <CheckCircle2 className="w-6 h-6 mr-3" />}
+                              FINALIZAR
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
                 {/* Painel de Eficiência - Só mostra após clicar em Iniciar */}
                 {ordem.data_efetiva_inicio && (
                   <EficienciaPanel
@@ -419,69 +486,7 @@ export default function OperadorDashboard() {
           )}
         </main>
 
-        {/* Action Buttons - Fixed bottom */}
-        {ordem.status !== 'Concluída' && (
-          <div className="fixed bottom-0 left-0 right-0 bg-white border-t-4 border-emerald-500 p-4 shadow-2xl">
-            <div className="max-w-2xl mx-auto">
-              {ordem.status === 'Pendente' ? (
-                <Button
-                  onClick={handleIniciar}
-                  disabled={saving}
-                  className="w-full h-20 text-xl bg-emerald-600 hover:bg-emerald-700 rounded-2xl font-bold shadow-xl"
-                >
-                  {saving ? (
-                    <Loader2 className="w-8 h-8 animate-spin" />
-                  ) : (
-                    <>
-                      <Play className="w-8 h-8 mr-3" />
-                      INICIAR IRRIGAÇÃO
-                    </>
-                  )}
-                </Button>
-              ) : ordem.status === 'Interrompida' ? (
-                <Button
-                  onClick={handleRetomar}
-                  disabled={saving}
-                  className="w-full h-20 text-xl bg-emerald-600 hover:bg-emerald-700 rounded-2xl font-bold shadow-xl"
-                >
-                  {saving ? (
-                    <Loader2 className="w-8 h-8 animate-spin" />
-                  ) : (
-                    <>
-                      <Play className="w-8 h-8 mr-3" />
-                      RETOMAR IRRIGAÇÃO
-                    </>
-                  )}
-                </Button>
-              ) : (
-                <div className="grid grid-cols-2 gap-4">
-                  <Button
-                    onClick={() => setShowStopDialog(true)}
-                    disabled={saving}
-                    className="h-20 text-lg bg-red-600 hover:bg-red-700 rounded-2xl font-bold shadow-xl"
-                  >
-                    <AlertTriangle className="w-7 h-7 mr-2" />
-                    INTERROMPER
-                  </Button>
-                  <Button
-                    onClick={handleConcluir}
-                    disabled={saving}
-                    className="h-20 text-lg bg-emerald-600 hover:bg-emerald-700 rounded-2xl font-bold shadow-xl"
-                  >
-                    {saving ? (
-                      <Loader2 className="w-7 h-7 animate-spin" />
-                    ) : (
-                      <>
-                        <CheckCircle2 className="w-7 h-7 mr-2" />
-                        FINALIZAR
-                      </>
-                    )}
-                  </Button>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+
 
         {/* Stop Dialog */}
         <Dialog open={showStopDialog} onOpenChange={setShowStopDialog}>
