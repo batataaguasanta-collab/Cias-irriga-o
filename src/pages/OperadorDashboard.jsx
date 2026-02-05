@@ -27,13 +27,10 @@ import {
   Loader2,
   MessageSquare,
   Clock,
-
-  LogOut,
   ArrowLeft,
   Activity
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
 import { createPageUrl } from '@/utils';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -233,8 +230,8 @@ export default function OperadorDashboard() {
             <div className="flex items-center justify-between gap-4">
 
               <div className="flex items-center gap-4">
-                <Link to={createPageUrl('Home')}>
-                  <Button variant="ghost" size="icon" className="text-white hover:bg-emerald-600/50 hover:text-white" title="Voltar ao Início">
+                <Link to={createPageUrl('AcompanhamentoIrrigacao')}>
+                  <Button variant="ghost" size="icon" className="text-white hover:bg-emerald-600/50 hover:text-white" title="Voltar ao Acompanhamento">
                     <ArrowLeft className="w-6 h-6" />
                   </Button>
                 </Link>

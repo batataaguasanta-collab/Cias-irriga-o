@@ -58,6 +58,7 @@ import OperadorDashboard from './pages/OperadorDashboard';
 import Login from './pages/Login';
 import Cadastro from './pages/Cadastro';
 import ResetPassword from './pages/ResetPassword';
+import RelatorioPendentes from './pages/RelatorioPendentes';
 import __Layout from './Layout.jsx';
 
 
@@ -74,6 +75,7 @@ export const PAGES = {
     "Login": Login,
     "Cadastro": Cadastro,
     "ResetPassword": ResetPassword,
+    "RelatorioPendentes": RelatorioPendentes,
 }
 
 export const pagesConfig = {

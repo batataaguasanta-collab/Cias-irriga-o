@@ -13,7 +13,8 @@ import {
   CheckCircle2,
   AlertTriangle,
   RefreshCw,
-  LogOut
+  LogOut,
+  Printer
 } from 'lucide-react';
 import { useAuth } from '@/lib/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
@@ -116,6 +117,11 @@ export default function Home() {
                   <Button size="lg" className="bg-white text-emerald-700 hover:bg-emerald-50 h-12 px-6 text-base shadow-sm font-bold">
                     <Plus className="w-5 h-5 mr-2" />
                     Nova Ordem
+                  </Button>
+                </Link>
+                <Link to={createPageUrl('RelatorioPendentes')}>
+                  <Button size="icon" className="h-12 w-12 bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm" title="Imprimir Relatório de Pendências">
+                    <Printer className="w-6 h-6" />
                   </Button>
                 </Link>
                 <Button
